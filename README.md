@@ -39,6 +39,16 @@ central-Delhi historical weather, CAMS air-quality history, and CPCB reference
 documents. Large research mirrors are downloaded separately when their public
 hosting requires a dedicated client.
 
+Normalize the downloaded AirDelhi hourly spatial grid with:
+
+```bash
+uv run python scripts/normalize_airdelhi.py
+```
+
+This writes an ignored Parquet artifact under `data/processed/` and a local
+manifest containing source hashes, time coverage, duplicate handling, and the
+output hash.
+
 ## Validate the AQI engine
 
 ```bash

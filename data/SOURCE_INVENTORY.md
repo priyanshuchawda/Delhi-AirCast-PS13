@@ -1,11 +1,13 @@
 # Downloaded source inventory
 
-Generated: `2026-09-12T16:37:34.812675+00:00`
-Files: **358**
-Bytes: **1,923,959,128**
+Generated: `2026-09-12T16:42:22.718801+00:00`
+Files: **360**
+Bytes: **1,925,450,981**
 
 | Source | File | Size | SHA-256 | Details |
 |---|---|---:|---|---|
+| processed | `data/processed/airdelhi_grid_hourly.manifest.json` | 1,424 | `3ad9b3bf737906ce…` | columns, duplicate_rows_collapsed, end_utc, generated_at, input_directory, output |
+| processed | `data/processed/airdelhi_grid_hourly.parquet` | 1,490,429 | `0b2abb2ed7ba740e…` |  |
 | processed | `data/processed/cpcb_2024_25_hourly/manifest.json` | 15,906 | `465c6b8f0c79b762…` | errors, generated_at, resource_count, source_manifest, station_count, stations |
 | processed | `data/processed/cpcb_2024_25_hourly/site_103.parquet` | 913,852 | `6bcb684a9adf8628…` |  |
 | processed | `data/processed/cpcb_2024_25_hourly/site_104.parquet` | 899,225 | `44c9133c4cb3950f…` |  |
