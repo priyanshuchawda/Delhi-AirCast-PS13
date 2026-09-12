@@ -15,14 +15,18 @@ def test_normalise_records_keeps_long_pollutant_rows_and_numeric_values():
             {
                 "station": "North Campus",
                 "pollutant_id": "PM2.5",
-                "pollutant_avg": "145",
+                "avg_value": "145",
+                "latitude": "28.7",
+                "longitude": "77.2",
                 "last_update": "12-09-2026 10:00:00",
             }
         ]
     )
-    assert frame.loc[0, "pollutant_avg"] == 145
+    assert frame.loc[0, "avg_value"] == 145
+    assert frame.loc[0, "latitude"] == 28.7
     assert frame.loc[0, "station"] == "North Campus"
     assert str(frame.loc[0, "timestamp_utc"].tz) == "UTC"
+    assert str(frame.loc[0, "timestamp_utc"]) == "2026-09-12 04:30:00+00:00"
 
 
 def test_resource_id_is_the_official_cpcb_live_resource():
