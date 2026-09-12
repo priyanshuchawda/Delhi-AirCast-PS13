@@ -101,6 +101,17 @@ under `data/raw/firms/`, retries transient failures, and resumes completed
 windows. NASA FIRMS is an auxiliary fire-event signal, not a replacement for
 CPCB station observations.
 
+Acquire the official CPCB live Delhi snapshot with a data.gov.in API key kept
+outside the repository:
+
+```bash
+export DATAGOV_API_KEY='your-data-gov-api-key'
+uv run python scripts/download_cpcb_live.py --state Delhi
+```
+
+The connector stores raw paginated JSON, a long-form Parquet snapshot, and a
+manifest under `data/raw/cpcb_live/`. It resumes completed pages by default.
+
 Run the local API after building the station artifact:
 
 ```bash
