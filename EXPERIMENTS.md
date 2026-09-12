@@ -107,3 +107,26 @@ The tree model wins this controlled comparison by about 5.3% MAE. The sequence
 models are retained as reproducible challengers, not promoted. A larger stride
 or fewer epochs is suitable for CPU prototyping, but final comparisons must use
 the same cohort and a rolling-origin protocol.
+
+### Data inventory checkpoint
+
+Command:
+
+    uv run python scripts/inventory_sources.py
+
+At the latest checkpoint the project contained 6,956 inventoried files totaling
+5.58 GB:
+
+| Area | Files | Size |
+|---|---:|---:|
+| Kaggle raw | 470 | 1,950.4 MiB |
+| OpenAQ raw | 4,769 | 1,242.3 MiB |
+| Hugging Face raw | 191 | 973.7 MiB |
+| OpenCity raw | 80 | 450.2 MiB |
+| AirDelhi raw | 37 | 346.2 MiB |
+| FIRMS raw | 1,321 | 97.6 MiB |
+| processed artifacts | 58 | 215.5 MiB |
+
+The OpenAQ downloader is still running, so this is a checkpoint rather than a
+final inventory. The inventory script excludes partial/lock files and records
+SHA-256 hashes for completed files.
