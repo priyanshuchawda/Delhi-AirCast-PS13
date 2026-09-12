@@ -1,0 +1,22 @@
+
+digraph G {
+  graph [fontname="Helvetica", bgcolor="white", pad="0.35", ranksep="0.7", nodesep="0.55",
+         labelloc="t", label="Figure. Ten Delhi stations as a neighbourhood graph",
+         fontsize=13, fontcolor="#1B3A5F"];
+  node [fontname="Helvetica", shape=box, style="rounded,filled", fillcolor="#D6E6F5",
+        color="#1B3A5F", fontcolor="#1B3A5F", penwidth=1.5, fontsize=11, margin="0.16,0.10"];
+  edge [color="#8AA0B8", penwidth=1.4, arrowhead=none];
+
+  { rank=same; Rohini; "Punjabi Bagh"; ITO; "Anand Vihar"; }
+  { rank=same; "NSIT Dwarka"; "Mandir Marg"; "Okhla Ph-2"; }
+  { rank=same; "Dwarka S8"; "RK Puram"; }
+  { rank=same; "IGI T3"; }
+
+  "Anand Vihar" [fillcolor="#1B3A5F", fontcolor="#FFFFFF"];
+
+  Rohini -> "Punjabi Bagh" -> "NSIT Dwarka" -> "Dwarka S8" -> "IGI T3";
+  "Punjabi Bagh" -> "Mandir Marg" -> ITO -> "Anand Vihar";
+  "Mandir Marg" -> "RK Puram" -> "Okhla Ph-2" -> "Anand Vihar";
+  ITO -> "Okhla Ph-2";
+  "NSIT Dwarka" -> "RK Puram" [style=dashed];
+}

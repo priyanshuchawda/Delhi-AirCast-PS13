@@ -1,0 +1,73 @@
+
+digraph G {
+  graph [
+    fontname="Helvetica",
+    bgcolor="white",
+    pad="0.25",
+    ranksep="0.55",
+    nodesep="0.35",
+    splines="spline",
+    outputorder="edgesfirst"
+  ];
+  node [
+    fontname="Helvetica",
+    fontsize=11,
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#EEF3F8",
+    color="#1B3A5F",
+    fontcolor="#1B3A5F",
+    penwidth=1.5,
+    margin="0.18,0.12"
+  ];
+  edge [
+    fontname="Helvetica",
+    fontsize=9,
+    color="#5B7A9D",
+    penwidth=1.4,
+    arrowsize=0.75
+  ];
+
+  labelloc="t";
+  label="Figure. End-to-end Delhi AirCast stack (all free sources)";
+  fontsize=13;
+  fontcolor="#1B3A5F";
+
+  subgraph cluster_hist {
+    label="TRAINING  (once / yearly refresh)";
+    color="#1B3A5F";
+    style="rounded,filled";
+    fillcolor="#F7FAFC";
+    fontcolor="#1B3A5F";
+    opencity [label="OpenCity CPCB dumps\n39 Delhi stations\n15-min 2024–2025", fillcolor="#E7F6EC"];
+    om_arch [label="Open-Meteo archive\nweather (no key)", fillcolor="#E7F6EC"];
+    openaq_h [label="OpenAQ historical\n(optional extra years)", fillcolor="#FFF4E5"];
+  }
+
+  subgraph cluster_live {
+    label="LIVE  (every hour)";
+    color="#2C5F8A";
+    style="rounded,filled";
+    fillcolor="#F7FAFC";
+    dgov [label="data.gov.in CPCB API\nofficial snapshot", fillcolor="#E7F6EC"];
+    openaq_l [label="OpenAQ live\nbackup", fillcolor="#FFF4E5"];
+    om_fc [label="Open-Meteo forecast\nnext 24–48 h weather", fillcolor="#E7F6EC"];
+    cams [label="CAMS AQ model\nauxiliary feature only", fillcolor="#FFF4E5"];
+  }
+
+  merge [label="Clean · align IST · QC sentinels\nHourly merge  +  lag features", shape=box, fillcolor="#D6E6F5", width=3.6];
+  store [label="Feature store\nParquet / DuckDB", fillcolor="#EEF3F8"];
+  models [label="Forecast models\nPersistence → XGBoost → LSTM\n(+ optional GNN)", fillcolor="#D6E6F5"];
+  aqi [label="CPCB AQI engine\nPM2.5 → category", fillcolor="#E7F6EC"];
+  dash [label="Web dashboard\nmap · chart · alerts · staleness", fillcolor="#1B3A5F", fontcolor="#FFFFFF"];
+
+  opencity -> merge;
+  om_arch -> merge;
+  openaq_h -> merge;
+  dgov -> merge;
+  openaq_l -> merge;
+  om_fc -> merge;
+  cams -> merge;
+  merge -> store -> models -> aqi -> dash;
+
+}

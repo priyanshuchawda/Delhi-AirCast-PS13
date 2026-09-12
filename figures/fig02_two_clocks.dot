@@ -1,0 +1,65 @@
+
+digraph G {
+  graph [
+    fontname="Helvetica",
+    bgcolor="white",
+    pad="0.25",
+    ranksep="0.55",
+    nodesep="0.35",
+    splines="spline",
+    outputorder="edgesfirst"
+  ];
+  node [
+    fontname="Helvetica",
+    fontsize=11,
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#EEF3F8",
+    color="#1B3A5F",
+    fontcolor="#1B3A5F",
+    penwidth=1.5,
+    margin="0.18,0.12"
+  ];
+  edge [
+    fontname="Helvetica",
+    fontsize=9,
+    color="#5B7A9D",
+    penwidth=1.4,
+    arrowsize=0.75
+  ];
+
+  rankdir=TB;
+  labelloc="t";
+  label="Figure. Two clocks: hourly forecast vs weekly improve-if-better";
+  fontsize=13;
+  fontcolor="#1B3A5F";
+
+  subgraph cluster_h {
+    label="EVERY HOUR  —  collect and forecast";
+    color="#1F6F64";
+    style="rounded,filled";
+    fillcolor="#F3FAF7";
+    h1 [label="Collect CPCB snapshot\n+ weather forecast"];
+    h2 [label="Append to live table"];
+    h3 [label="Run frozen production model"];
+    h4 [label="Write 1–24 h PM2.5 path\n+ AQI + narrative"];
+    h1 -> h2 -> h3 -> h4;
+  }
+
+  subgraph cluster_w {
+    label="EVERY WEEK  —  champion / challenger";
+    color="#B7791F";
+    style="rounded,filled";
+    fillcolor="#FFF8EC";
+    w1 [label="Add new labelled hours"];
+    w2 [label="Score production model\n(28-day MAE / RMSE)"];
+    w3 [label="Retrain candidate"];
+    w4 [label="Compare on same window"];
+    w5a [label="Better → use the new model", fillcolor="#E7F6EC"];
+    w5b [label="Keep the current model", fillcolor="#EEF3F8"];
+    w1 -> w2 -> w3 -> w4;
+    w4 -> w5a;
+    w4 -> w5b;
+  }
+
+}

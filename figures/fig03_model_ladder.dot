@@ -1,0 +1,49 @@
+
+digraph G {
+  graph [
+    fontname="Helvetica",
+    bgcolor="white",
+    pad="0.25",
+    ranksep="0.55",
+    nodesep="0.35",
+    splines="spline",
+    outputorder="edgesfirst"
+  ];
+  node [
+    fontname="Helvetica",
+    fontsize=11,
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#EEF3F8",
+    color="#1B3A5F",
+    fontcolor="#1B3A5F",
+    penwidth=1.5,
+    margin="0.18,0.12"
+  ];
+  edge [
+    fontname="Helvetica",
+    fontsize=9,
+    color="#5B7A9D",
+    penwidth=1.4,
+    arrowsize=0.75
+  ];
+
+  rankdir=LR;
+  labelloc="t";
+  label="Figure. We start simple, then add a stronger model at each step";
+  fontsize=13;
+  fontcolor="#1B3A5F";
+
+  m0 [label="0  Persistence\nŷ(t+h) = y(t)\nbaseline", fillcolor="#EEF3F8"];
+  m1 [label="1  XGBoost\nlags + weather\n+ calendar", fillcolor="#FFF4E5"];
+  m2 [label="2  LSTM\n24 h sequence\n→ 1–24 h path", fillcolor="#D6E6F5"];
+  m3 [label="3  Optional GNN\nstations as nodes\nneighbourhood", fillcolor="#E7F6EC"];
+
+  m0 -> m1 [label="then compare"];
+  m1 -> m2 [label="keep the better"];
+  m2 -> m3 [label="nearby stations"];
+
+  cams [label="CAMS model field\nextra regional\nbackground", fillcolor="#EEF3F8", fontsize=10];
+  m0 -> cams [style=dashed, constraint=false];
+
+}

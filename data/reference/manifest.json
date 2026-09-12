@@ -1,0 +1,32 @@
+{
+  "downloaded_at": "2026-09-12T16:23:00+00:00",
+  "files": [
+    {
+      "filename": "cpcb-national-aqi-calculation.pdf",
+      "url": "https://airquality.cpcb.gov.in/ccr_docs/How_AQI_Calculated.pdf",
+      "status": "downloaded",
+      "path": "data/reference/cpcb-national-aqi-calculation.pdf",
+      "bytes": 29049,
+      "sha256": "5f5e6aed006313bf46118399805cf71ef9d1aee6e21b362df98782ab5b308ced",
+      "download_note": "Retrieved with curl -k because this host presented a self-signed certificate in this environment."
+    },
+    {
+      "filename": "cpcb-national-aqi-final-report.pdf",
+      "url": "https://airquality.cpcb.gov.in/ccr_docs/FINAL-REPORT_AQI_.pdf",
+      "status": "downloaded",
+      "path": "data/reference/cpcb-national-aqi-final-report.pdf",
+      "bytes": 1414492,
+      "sha256": "d2b0fd754a8f9fb36919ec8d5a41e85a81b471dc4ebcf7831e3a1172aee8db37",
+      "download_note": "Retrieved with curl -k because this host presented a self-signed certificate in this environment."
+    },
+    {
+      "filename": "cpcb-delhi-ncr-stations.pdf",
+      "url": "https://airquality.cpcb.gov.in/ccr_docs/caaqms_list_NCR.pdf",
+      "status": "downloaded",
+      "path": "data/reference/cpcb-delhi-ncr-stations.pdf",
+      "bytes": 149717,
+      "sha256": "15caf23db02d8d21d2e12cebc6bc12e4ea91946b2a780af3c680f0400cc732c4",
+      "download_note": "Retrieved with curl -k because this host presented a self-signed certificate in this environment."
+    }
+  ]
+}

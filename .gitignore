@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Downloaded datasets and generated local data products
+data/raw/
+data/processed/
+data/cache/
+data/runs/
+
+# Local secrets for optional APIs
+.env

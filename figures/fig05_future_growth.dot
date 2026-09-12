@@ -1,0 +1,45 @@
+
+digraph G {
+  graph [
+    fontname="Helvetica",
+    bgcolor="white",
+    pad="0.25",
+    ranksep="0.55",
+    nodesep="0.35",
+    splines="spline",
+    outputorder="edgesfirst"
+  ];
+  node [
+    fontname="Helvetica",
+    fontsize=11,
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#EEF3F8",
+    color="#1B3A5F",
+    fontcolor="#1B3A5F",
+    penwidth=1.5,
+    margin="0.18,0.12"
+  ];
+  edge [
+    fontname="Helvetica",
+    fontsize=9,
+    color="#5B7A9D",
+    penwidth=1.4,
+    arrowsize=0.75
+  ];
+
+  rankdir=LR;
+  labelloc="t";
+  label="Figure. Growth path: same stack, wider geography and smarter models";
+  fontsize=13;
+  fontcolor="#1B3A5F";
+
+  n0 [label="NOW\n10 Delhi stations\nXGBoost + live dashboard", fillcolor="#1B3A5F", fontcolor="#FFFFFF"];
+  n1 [label="NEXT\nall 39 Delhi sites\nneighbour lags / GNN", fillcolor="#D6E6F5"];
+  n2 [label="NCR\nNoida · Gurugram\nGhaziabad · Faridabad\nsame CPCB API", fillcolor="#D6E6F5"];
+  n3 [label="ANY CAAQMS CITY\nPune · Mumbai · Bengaluru\nswap station list", fillcolor="#E7F6EC"];
+  n4 [label="PRODUCT\nalerts · public API\nuncertainty bands", fillcolor="#FFF4E5"];
+
+  n0 -> n1 -> n2 -> n3 -> n4;
+
+}
