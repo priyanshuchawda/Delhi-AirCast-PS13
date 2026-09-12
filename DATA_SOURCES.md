@@ -21,6 +21,9 @@ automatically treated as ground truth.
 
 - Raw files remain source-specific and are not silently merged.
 - CPCB station data is the primary supervised target for the product.
+- AirDelhi's 1 km x 1 hour grid is a spatial/mobile-sensor benchmark and is
+  normalized separately; it is not treated as interchangeable with CPCB
+  reference-station labels.
 - AirDelhi mobile sensors are useful for spatial research and interpolation,
   but are not interchangeable with CPCB reference-station labels.
 - CAMS is an auxiliary regional model field, not a station observation.

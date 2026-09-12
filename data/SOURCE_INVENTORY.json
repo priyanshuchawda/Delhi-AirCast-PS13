@@ -1,8 +1,34 @@
 {
-  "generated_at": "2026-09-12T16:37:34.812675+00:00",
-  "file_count": 358,
-  "total_bytes": 1923959128,
+  "generated_at": "2026-09-12T16:42:22.718801+00:00",
+  "file_count": 360,
+  "total_bytes": 1925450981,
   "files": [
+    {
+      "path": "data/processed/airdelhi_grid_hourly.manifest.json",
+      "source": "processed",
+      "bytes": 1424,
+      "sha256": "3ad9b3bf737906ce674c3da7ca5319cca4f20b33a9dc6acaeb2570e15e69cde2",
+      "json_keys": [
+        "columns",
+        "duplicate_rows_collapsed",
+        "end_utc",
+        "generated_at",
+        "input_directory",
+        "output",
+        "rows_before_deduplication",
+        "rows_written",
+        "source_dataset",
+        "source_files",
+        "source_variant",
+        "start_utc"
+      ]
+    },
+    {
+      "path": "data/processed/airdelhi_grid_hourly.parquet",
+      "source": "processed",
+      "bytes": 1490429,
+      "sha256": "0b2abb2ed7ba740ec0b810246b65cf0ae432734bbe5163f39b5d59ff10fee9e6"
+    },
     {
       "path": "data/processed/cpcb_2024_25_hourly/manifest.json",
       "source": "processed",
