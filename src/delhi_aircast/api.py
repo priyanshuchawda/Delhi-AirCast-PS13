@@ -37,10 +37,18 @@ def _station_summary_path() -> Path:
 @app.get("/health")
 def health() -> dict[str, Any]:
     summary = _station_summary_path()
+    multistation_dataset = DATA_ROOT / "data/processed/delhi_multistation_forecast.parquet"
+    available_horizons = [
+        horizon
+        for horizon in (1, 3, 6, 12, 24)
+        if (DATA_ROOT / f"data/runs/multistation_xgboost/model_{horizon}h.joblib").exists()
+    ]
     return {
         "status": "ok",
         "aqi_engine": "available",
         "station_summary": summary.exists(),
+        "multistation_dataset": multistation_dataset.exists(),
+        "multistation_xgboost_horizons": available_horizons,
         "data_root": str(DATA_ROOT.resolve()),
     }
 
@@ -66,8 +74,64 @@ def stations() -> dict[str, Any]:
     return {"count": int(len(frame)), "stations": frame.to_dict(orient="records")}
 
 
+def _multistation_feature_row(row: pd.Series, station_id: str, feature_columns: list[str]) -> pd.DataFrame:
+    values = {}
+    for column in feature_columns:
+        if column.startswith("station_"):
+            values[column] = float(column == f"station_{station_id}")
+        else:
+            values[column] = row.get(column)
+    return pd.DataFrame([values], columns=feature_columns)
+
+
+def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | None:
+    dataset = DATA_ROOT / "data/processed/delhi_multistation_forecast.parquet"
+    model_path = DATA_ROOT / f"data/runs/multistation_xgboost/model_{horizon}h.joblib"
+    if not dataset.exists() or not model_path.exists():
+        return None
+    try:
+        frame = pd.read_parquet(dataset, filters=[("station_id", "=", station_id)])
+    except (OSError, ValueError):
+        frame = pd.read_parquet(dataset)
+        frame = frame[frame["station_id"] == station_id]
+    if frame.empty:
+        raise HTTPException(status_code=404, detail=f"Unknown station: {station_id}")
+    usable = frame.dropna(subset=["pm25_current"]).sort_values("timestamp_utc")
+    if usable.empty:
+        raise HTTPException(status_code=503, detail="No current PM2.5 feature row is available")
+    latest = usable.iloc[-1]
+    bundle = joblib.load(model_path)
+    features = bundle["feature_columns"]
+    vector = _multistation_feature_row(latest, station_id, features)
+    prediction = max(0.0, float(bundle["model"].predict(vector)[0]))
+    issued_at = pd.Timestamp(latest["timestamp_utc"])
+    return {
+        "station_id": station_id,
+        "as_of_utc": issued_at.isoformat(),
+        "target_timestamp_utc": (issued_at + pd.Timedelta(hours=horizon)).isoformat(),
+        "current_pm25": float(latest["pm25_current"]),
+        "forecast_pm25": prediction,
+        "horizon_hours": horizon,
+        "model": "global_xgboost",
+        "model_artifact": str(model_path),
+        "feature_count": len(features),
+        "quality_status": "historical_artifact",
+        "source_status": "offline_historical_panel",
+    }
+
+
 @app.get("/forecast/{station_id}")
-def forecast(station_id: str) -> dict[str, Any]:
+def forecast(station_id: str, horizon: int = 1) -> dict[str, Any]:
+    if horizon not in {1, 3, 6, 12, 24}:
+        raise HTTPException(status_code=400, detail="horizon must be one of 1, 3, 6, 12, or 24 hours")
+    multistation = _multistation_forecast(station_id, horizon)
+    if multistation is not None:
+        return multistation
+    if horizon != 1:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Multi-station {horizon}h forecast artifact is unavailable; train it first",
+        )
     dataset = DATA_ROOT / f"data/processed/{station_id}_next_hour_forecast.parquet"
     model_path = DATA_ROOT / f"data/runs/{station_id}_next_hour_baseline/model.joblib"
     if not dataset.exists() or not model_path.exists():
@@ -95,4 +159,24 @@ def forecast(station_id: str) -> dict[str, Any]:
         "forecast_pm25": prediction,
         "model": "HistGradientBoostingRegressor",
         "feature_count": len(features),
+        "horizon_hours": 1,
+        "quality_status": "historical_artifact",
+        "source_status": "offline_station_panel",
+    }
+
+
+@app.get("/forecast/{station_id}/path")
+def forecast_path(station_id: str) -> dict[str, Any]:
+    forecasts = []
+    for horizon in (1, 3, 6, 12, 24):
+        result = _multistation_forecast(station_id, horizon)
+        if result is not None:
+            forecasts.append(result)
+    if not forecasts:
+        raise HTTPException(status_code=503, detail="No multi-horizon forecast artifacts are available")
+    return {
+        "station_id": station_id,
+        "quality_status": forecasts[0]["quality_status"],
+        "source_status": forecasts[0]["source_status"],
+        "forecasts": forecasts,
     }
