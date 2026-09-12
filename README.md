@@ -76,6 +76,14 @@ responses under `data/raw/openaq/`. It defaults to reference-monitor locations
 and PM10, PM2.5, O3, CO, NO2, and SO2. Historical batches are resumable and
 record response counts, hashes, and provenance in JSON manifests.
 
+Normalize downloaded OpenAQ hourly batches into Parquet with:
+
+```bash
+uv run python scripts/normalize_openaq.py
+```
+
+The output is written to `data/processed/openaq/` with a matching manifest.
+
 Run the local API after building the station artifact:
 
 ```bash
