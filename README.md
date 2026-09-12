@@ -61,6 +61,21 @@ both persistence and gradient-boosted predictions. Forecast features are
 constructed from information available at the prediction timestamp; no random
 shuffle is used.
 
+Acquire OpenAQ Delhi/NCR batches with a verified key kept outside the project:
+
+```bash
+export OPENAQ_API_KEY='your-64-character-openaq-key'
+uv run python scripts/download_openaq.py --batch catalog
+uv run python scripts/download_openaq.py --batch latest
+uv run python scripts/download_openaq.py --batch hourly \
+  --start 2026-08-01T00:00:00Z --end 2026-09-01T00:00:00Z
+```
+
+The OpenAQ downloader stores raw catalog, latest-reading, and hourly-average
+responses under `data/raw/openaq/`. It defaults to reference-monitor locations
+and PM10, PM2.5, O3, CO, NO2, and SO2. Historical batches are resumable and
+record response counts, hashes, and provenance in JSON manifests.
+
 Run the local API after building the station artifact:
 
 ```bash
