@@ -61,6 +61,25 @@ both persistence and gradient-boosted predictions. Forecast features are
 constructed from information available at the prediction timestamp; no random
 shuffle is used.
 
+Analyze the complete CPCB station panel and build the multi-station feature
+table:
+
+    uv run python scripts/analyze_cpcb_panel.py
+    uv run python scripts/build_multistation_dataset.py
+
+The quality report records coverage, missingness, duplicate timestamps, PM2.5
+statistics, network availability, and conservative coordinate matches to the
+live CPCB snapshot. The feature builder writes direct PM2.5 targets for
+1/3/6/12/24 hours and uses only current or past observations.
+
+Train the first global multi-station XGBoost challenger:
+
+    uv run python scripts/train_multistation_baseline.py --horizon 1
+    uv run python scripts/train_multistation_baseline.py --horizon 6
+
+The measured results and promotion decision are tracked in
+EXPERIMENTS.md.
+
 Acquire OpenAQ Delhi/NCR batches with a verified key kept outside the project:
 
 ```bash
