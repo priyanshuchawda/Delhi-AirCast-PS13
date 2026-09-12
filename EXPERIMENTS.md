@@ -83,3 +83,27 @@ remains a challenger rather than the promoted API model.
 4. Compare no-neighbour, geographic-neighbour, and wind-aware feature sets.
 5. Add quantile forecasts and conformal calibration.
 6. Only then benchmark TCN/LSTM and graph challengers against the same splits.
+
+### Sequence challengers, 6-hour horizon
+
+Commands:
+
+    uv run python scripts/train_sequence_model.py --model lstm --horizon 6 --sequence-length 48 --stride 12 --epochs 3 --batch-size 256
+    uv run python scripts/train_sequence_model.py --model tcn --horizon 6 --sequence-length 48 --stride 12 --epochs 3 --batch-size 256
+    uv run python scripts/compare_sequence_cohort.py --model tcn --horizon 6 --sequence-length 48 --stride 12
+
+The LSTM and TCN use 48 hours of history, train-only normalization, explicit
+missingness masks, station embeddings, and direct 6-hour targets. On the
+identical 6,708-row test cohort with valid issue-time persistence:
+
+| Model | MAE | RMSE |
+|---|---:|---:|
+| Persistence | 66.812 | 94.043 |
+| Global XGBoost | 42.814 | 63.032 |
+| LSTM | 45.195 | 69.235 |
+| TCN | 45.197 | 68.380 |
+
+The tree model wins this controlled comparison by about 5.3% MAE. The sequence
+models are retained as reproducible challengers, not promoted. A larger stride
+or fewer epochs is suitable for CPU prototyping, but final comparisons must use
+the same cohort and a rolling-origin protocol.

@@ -85,6 +85,12 @@ Run expanding-window quarterly backtests:
     uv run python scripts/evaluate_backtests.py --horizon 1 --model persistence
     uv run python scripts/evaluate_backtests.py --horizon 1 --model xgboost --n-estimators 120 --n-jobs 6
 
+Train CPU sequence challengers and compare them with the same test cohort:
+
+    uv run python scripts/train_sequence_model.py --model lstm --horizon 6 --sequence-length 48 --stride 12 --epochs 3
+    uv run python scripts/train_sequence_model.py --model tcn --horizon 6 --sequence-length 48 --stride 12 --epochs 3
+    uv run python scripts/compare_sequence_cohort.py --model tcn --horizon 6 --sequence-length 48 --stride 12
+
 Acquire OpenAQ Delhi/NCR batches with a verified key kept outside the project:
 
 ```bash
