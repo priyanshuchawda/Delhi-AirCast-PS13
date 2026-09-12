@@ -84,6 +84,23 @@ uv run python scripts/normalize_openaq.py
 
 The output is written to `data/processed/openaq/` with a matching manifest.
 
+Download NASA FIRMS active-fire observations for Delhi and the North India
+upwind region with a MAP_KEY kept outside the repository:
+
+```bash
+export FIRMS_MAP_KEY='your-firms-map-key'
+uv run python scripts/download_firms.py \
+  --start-date 2024-01-01 \
+  --end-date 2025-12-31
+```
+
+The default bounding box is `74,25,79.5,31.5`; it covers Delhi/NCR and
+important Punjab, Haryana, Rajasthan, and Uttar Pradesh upwind areas. The
+connector uses five-day windows, saves raw CSV files and SHA-256 manifests
+under `data/raw/firms/`, retries transient failures, and resumes completed
+windows. NASA FIRMS is an auxiliary fire-event signal, not a replacement for
+CPCB station observations.
+
 Run the local API after building the station artifact:
 
 ```bash
