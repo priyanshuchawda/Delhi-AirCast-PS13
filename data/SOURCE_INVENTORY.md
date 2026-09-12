@@ -1,8 +1,8 @@
 # Downloaded source inventory
 
-Generated: `2026-09-12T16:42:22.718801+00:00`
-Files: **360**
-Bytes: **1,925,450,981**
+Generated: `2026-09-12T16:48:43.450345+00:00`
+Files: **364**
+Bytes: **1,928,232,964**
 
 | Source | File | Size | SHA-256 | Details |
 |---|---|---:|---|---|
@@ -49,6 +49,8 @@ Bytes: **1,925,450,981**
 | processed | `data/processed/cpcb_2024_25_hourly/site_5393.parquet` | 1,297,536 | `0889fe923aac3841…` |  |
 | processed | `data/processed/cpcb_2024_25_hourly/site_5395.parquet` | 798,388 | `d59dab91bf1cf4f8…` |  |
 | processed | `data/processed/cpcb_2024_25_hourly/station_summary.csv` | 7,164 | `45c2a3b59415a408…` | 39 rows; station_id, station_name, raw_rows, hourly_rows, start_utc, end_utc |
+| processed | `data/processed/site_105_next_hour_forecast.manifest.json` | 2,278 | `d72e76d940cb78aa…` | cams_source, columns, end_utc, feature_policy, forecast_horizon_hours, generated_at |
+| processed | `data/processed/site_105_next_hour_forecast.parquet` | 2,267,865 | `c0a8ba69d0e293e2…` |  |
 | raw | `data/raw/airdelhi/2020-11-01_all.csv` | 7,139,272 | `f4385404b62009b9…` | 54,650 rows; , uid, dateTime, deviceId, lat, long |
 | raw | `data/raw/airdelhi/2020-11-02_all.csv` | 2,750,466 | `81b3406548b74d63…` | 21,113 rows; , uid, dateTime, deviceId, lat, long |
 | raw | `data/raw/airdelhi/2020-11-03_all.csv` | 12,402,089 | `d35133d4596aac77…` | 96,213 rows; , uid, dateTime, deviceId, lat, long |
@@ -366,3 +368,5 @@ Bytes: **1,925,450,981**
 | reference | `data/reference/cpcb-national-aqi-calculation.pdf` | 29,049 | `5f5e6aed006313bf…` |  |
 | reference | `data/reference/cpcb-national-aqi-final-report.pdf` | 1,414,492 | `d2b0fd754a8f9fb3…` |  |
 | reference | `data/reference/manifest.json` | 1,473 | `47de706aae402524…` | downloaded_at, files |
+| runs | `data/runs/site_105_next_hour_baseline/metrics.json` | 2,328 | `887305247648dc03…` | dataset, feature_columns, forecast_horizon_hours, generated_at, model, split_policy |
+| runs | `data/runs/site_105_next_hour_baseline/model.joblib` | 509,512 | `125223c256b27acb…` |  |

@@ -49,6 +49,18 @@ This writes an ignored Parquet artifact under `data/processed/` and a local
 manifest containing source hashes, time coverage, duplicate handling, and the
 output hash.
 
+Build and evaluate a first one-hour-ahead CPCB baseline:
+
+```bash
+uv run python scripts/build_forecast_dataset.py --station-id site_105
+uv run python scripts/train_baseline.py
+```
+
+The baseline uses chronological train/validation/test partitions and reports
+both persistence and gradient-boosted predictions. Forecast features are
+constructed from information available at the prediction timestamp; no random
+shuffle is used.
+
 ## Validate the AQI engine
 
 ```bash

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-12T16:42:22.718801+00:00",
-  "file_count": 360,
-  "total_bytes": 1925450981,
+  "generated_at": "2026-09-12T16:48:43.450345+00:00",
+  "file_count": 364,
+  "total_bytes": 1928232964,
   "files": [
     {
       "path": "data/processed/airdelhi_grid_hourly.manifest.json",
@@ -307,6 +307,34 @@
         ],
         "rows": 39
       }
+    },
+    {
+      "path": "data/processed/site_105_next_hour_forecast.manifest.json",
+      "source": "processed",
+      "bytes": 2278,
+      "sha256": "d72e76d940cb78aa52957cbac020d713d6e4c76b5515309d0abe169cf2d196ed",
+      "json_keys": [
+        "cams_source",
+        "columns",
+        "end_utc",
+        "feature_policy",
+        "forecast_horizon_hours",
+        "generated_at",
+        "output",
+        "rows_written",
+        "sources",
+        "start_utc",
+        "station_id",
+        "station_source",
+        "target_non_null_rows",
+        "weather_source"
+      ]
+    },
+    {
+      "path": "data/processed/site_105_next_hour_forecast.parquet",
+      "source": "processed",
+      "bytes": 2267865,
+      "sha256": "c0a8ba69d0e293e27f4b19b221d763f134de7650ca2c0aa6338d820bec53f2ab"
     },
     {
       "path": "data/raw/airdelhi/2020-11-01_all.csv",
@@ -12340,6 +12368,27 @@
         "downloaded_at",
         "files"
       ]
+    },
+    {
+      "path": "data/runs/site_105_next_hour_baseline/metrics.json",
+      "source": "runs",
+      "bytes": 2328,
+      "sha256": "887305247648dc038358f5acc9102bfd474db3f2fe529da603404de5fee7c016",
+      "json_keys": [
+        "dataset",
+        "feature_columns",
+        "forecast_horizon_hours",
+        "generated_at",
+        "model",
+        "split_policy",
+        "splits"
+      ]
+    },
+    {
+      "path": "data/runs/site_105_next_hour_baseline/model.joblib",
+      "source": "runs",
+      "bytes": 509512,
+      "sha256": "125223c256b27acba933991843caf55a3713b3dc12727bdca475281804904477"
     }
   ]
 }
