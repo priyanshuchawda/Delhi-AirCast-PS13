@@ -13,7 +13,7 @@ automatically treated as ground truth.
 | [IIT Delhi AirDelhi](https://www.cse.iitd.ac.in/pollutiondata/download) | Mobile-sensor, fine-grained spatial benchmark | Public Google Drive; CC BY 4.0 | Partial local capture under `data/raw/airdelhi/`; complete mirror under `data/raw/huggingface/DelhiPollDataset/` |
 | [AirDelhi Hugging Face mirror](https://huggingface.co/datasets/sachin-iitd/DelhiPollDataset) | Raw/clean/grid benchmark variants | Public; CC BY 4.0 | Download in progress under `data/raw/huggingface/` |
 | [Zenodo India PM2.5 dataset](https://zenodo.org/records/20789755) | Processed 3-hourly multi-city comparison dataset | Public download | Downloaded under `data/raw/zenodo/` |
-| [OpenAQ API](https://docs.openaq.org/api) | Historical/live backup and station cross-check | Free API key required | Awaiting optional key |
+| [OpenAQ API](https://docs.openaq.org/api) | Historical/live backup and station cross-check | Free API key required | Catalog + latest batches downloaded under `data/raw/openaq/`; hourly batches resumable |
 | [OpenAQ AWS archive](https://docs.openaq.org/aws/about) | No-account daily CSV archive for known location IDs | Public S3 | Location coverage being audited |
 | [Kaggle Delhi datasets](https://www.kaggle.com/datasets/jatinkalra17/delhi-aqi) | Community comparison datasets only | Kaggle credentials/token generally required | Awaiting optional Kaggle token |
 
