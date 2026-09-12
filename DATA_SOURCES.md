@@ -10,7 +10,7 @@ automatically treated as ground truth.
 | [CPCB real-time AQI on data.gov.in](https://www.data.gov.in/resource/real-time-air-quality-index-various-locations) | Official live station snapshot | Free API key required for full API use | Connector planned; key not stored in Git |
 | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Historical meteorological features | Public, no key for this academic use | Downloaded under `data/raw/weather/` |
 | [Open-Meteo Air Quality / CAMS](https://open-meteo.com/en/docs/air-quality-api) | Regional auxiliary PM and gas features | Public, no key for this academic use | Downloaded under `data/raw/cams/` |
-| [IIT Delhi AirDelhi](https://www.cse.iitd.ac.in/pollutiondata/download) | Mobile-sensor, fine-grained spatial benchmark | Public Google Drive; CC BY 4.0 | Download in progress under `data/raw/airdelhi/` |
+| [IIT Delhi AirDelhi](https://www.cse.iitd.ac.in/pollutiondata/download) | Mobile-sensor, fine-grained spatial benchmark | Public Google Drive; CC BY 4.0 | Partial local capture under `data/raw/airdelhi/`; complete mirror under `data/raw/huggingface/DelhiPollDataset/` |
 | [AirDelhi Hugging Face mirror](https://huggingface.co/datasets/sachin-iitd/DelhiPollDataset) | Raw/clean/grid benchmark variants | Public; CC BY 4.0 | Download in progress under `data/raw/huggingface/` |
 | [Zenodo India PM2.5 dataset](https://zenodo.org/records/20789755) | Processed 3-hourly multi-city comparison dataset | Public download | Downloaded under `data/raw/zenodo/` |
 | [OpenAQ API](https://docs.openaq.org/api) | Historical/live backup and station cross-check | Free API key required | Awaiting optional key |
