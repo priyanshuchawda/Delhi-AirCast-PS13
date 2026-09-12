@@ -99,12 +99,25 @@ def _normalise_records(records: list[dict[str, object]]) -> pd.DataFrame:
         return pd.DataFrame()
     frame = pd.json_normalize(records)
     frame.columns = [str(column).strip().lower().replace(" ", "_") for column in frame.columns]
-    for column in ("pollutant_min", "pollutant_max", "pollutant_avg", "aqi"):
+    for column in (
+        "pollutant_min",
+        "pollutant_max",
+        "pollutant_avg",
+        "min_value",
+        "max_value",
+        "avg_value",
+        "aqi",
+        "latitude",
+        "longitude",
+    ):
         if column in frame:
             frame[column] = pd.to_numeric(frame[column], errors="coerce")
     for column in ("last_update", "last_updated"):
         if column in frame:
-            frame["timestamp_utc"] = pd.to_datetime(frame[column], errors="coerce", utc=True)
+            parsed = pd.to_datetime(frame[column], errors="coerce", dayfirst=True)
+            if parsed.dt.tz is None:
+                parsed = parsed.dt.tz_localize("Asia/Kolkata")
+            frame["timestamp_utc"] = parsed.dt.tz_convert("UTC")
             break
     return frame
 
