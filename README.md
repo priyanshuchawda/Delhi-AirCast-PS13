@@ -61,6 +61,17 @@ both persistence and gradient-boosted predictions. Forecast features are
 constructed from information available at the prediction timestamp; no random
 shuffle is used.
 
+Run the local API after building the station artifact:
+
+```bash
+uv run uvicorn delhi_aircast.api:app --reload
+curl http://127.0.0.1:8000/health
+curl -X POST http://127.0.0.1:8000/aqi \\
+  -H 'content-type: application/json' \\
+  -d '{"pm25":145}'
+curl http://127.0.0.1:8000/forecast/site_105
+```
+
 ## Validate the AQI engine
 
 ```bash
