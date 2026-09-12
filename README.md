@@ -72,6 +72,10 @@ curl -X POST http://127.0.0.1:8000/aqi \\
 curl http://127.0.0.1:8000/forecast/site_105
 ```
 
+Optional comparison sources are listed in [`KAGGLE_DATASETS.md`](KAGGLE_DATASETS.md).
+They can be downloaded with `uv run python scripts/download_kaggle.py` after
+installing the external client with `uv tool install kaggle`.
+
 ## Validate the AQI engine
 
 ```bash
