@@ -8,7 +8,7 @@ College report + review slides for **PS-13 AI-Powered Air Quality Forecasting**.
 |------|------|
 | `Delhi_AirCast_PS13_Data_Acquisition_Report.docx` | Full report (edit cover: name, roll, college) |
 | `Delhi_AirCast_PS13_Data_Acquisition_Report.pdf` | Printable PDF |
-| `Delhi_AirCast_PS13_Presentation.pptx` | 16-slide review deck |
+| `Delhi_AirCast_PS13_Presentation.pptx` | Review deck |
 | `Delhi_AirCast_PS13_Presentation.pdf` | Slides as PDF |
 | `figures/` | Architecture diagrams (Graphviz + Matplotlib) |
 
@@ -38,3 +38,13 @@ The downloader currently collects the 78-resource OpenCity/CPCB Delhi archive,
 central-Delhi historical weather, CAMS air-quality history, and CPCB reference
 documents. Large research mirrors are downloaded separately when their public
 hosting requires a dedicated client.
+
+## Validate the AQI engine
+
+```bash
+uv run pytest -q
+```
+
+The CPCB implementation returns a clearly labelled PM2.5-only proxy when a
+station does not have enough pollutant inputs for an official overall AQI. It
+does not silently turn a single PM2.5 measurement into a full AQI.
