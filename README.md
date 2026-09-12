@@ -112,6 +112,16 @@ uv run python scripts/download_cpcb_live.py --state Delhi
 The connector stores raw paginated JSON, a long-form Parquet snapshot, and a
 manifest under `data/raw/cpcb_live/`. It resumes completed pages by default.
 
+Normalize the downloaded OpenCity 2017–2023 AQI-only archive separately with:
+
+```bash
+uv run python scripts/normalize_cpcb_legacy_aqi.py
+```
+
+This produces `data/processed/cpcb_2017_2023_aqi.parquet`. It is retained as
+an AQI validation/history layer and is not mixed into pollutant-concentration
+training targets without a separate audit.
+
 Run the local API after building the station artifact:
 
 ```bash
