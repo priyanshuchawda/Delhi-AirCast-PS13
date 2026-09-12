@@ -6,7 +6,7 @@ automatically treated as ground truth.
 
 | Source | Role | Access | Local status |
 |---|---|---|---|
-| [OpenCity Delhi Hourly Air Quality Reports](https://data.opencity.in/dataset/delhi-hourly-air-quality-reports) | Primary CPCB/DPCC historical station archive; 39 stations and 78 CSV resources | Public | Downloaded under `data/raw/opencity/` |
+| [OpenCity Delhi Hourly Air Quality Reports](https://data.opencity.in/dataset/delhi-hourly-air-quality-reports) | Primary CPCB/DPCC historical station archive; 39 stations and 78 CSV resources | Public | Downloaded under `data/raw/opencity/`; 2024–2025 pollutant archive normalized, 2017–2023 AQI archive parser added |
 | [CPCB real-time AQI on data.gov.in](https://www.data.gov.in/resource/real-time-air-quality-index-various-locations) | Official live station snapshot | Free API key required for full API use | Resumable connector in `scripts/download_cpcb_live.py`; key not stored in Git |
 | [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Historical meteorological features | Public, no key for this academic use | Downloaded under `data/raw/weather/` |
 | [Open-Meteo Air Quality / CAMS](https://open-meteo.com/en/docs/air-quality-api) | Regional auxiliary PM and gas features | Public, no key for this academic use | Downloaded under `data/raw/cams/` |
