@@ -161,6 +161,17 @@ curl -X POST http://127.0.0.1:8000/aqi \\
   -H 'content-type: application/json' \\
   -d '{"pm25":145}'
 curl http://127.0.0.1:8000/forecast/site_105
+
+When the multi-station feature table and XGBoost artifacts exist, the forecast
+endpoint automatically prefers them:
+
+    curl 'http://127.0.0.1:8000/forecast/site_105?horizon=6'
+    curl http://127.0.0.1:8000/forecast/site_105/path
+
+Responses include issue time, target time, model artifact, horizon, feature
+count, and an explicit historical/offline quality state. This prevents the
+offline research panel from being presented as a live forecast until live
+feature ingestion is implemented.
 ```
 
 Optional comparison sources are listed in [`KAGGLE_DATASETS.md`](KAGGLE_DATASETS.md).
