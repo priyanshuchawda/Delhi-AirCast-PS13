@@ -80,6 +80,11 @@ Train the first global multi-station XGBoost challenger:
 The measured results and promotion decision are tracked in
 EXPERIMENTS.md.
 
+Run expanding-window quarterly backtests:
+
+    uv run python scripts/evaluate_backtests.py --horizon 1 --model persistence
+    uv run python scripts/evaluate_backtests.py --horizon 1 --model xgboost --n-estimators 120 --n-jobs 6
+
 Acquire OpenAQ Delhi/NCR batches with a verified key kept outside the project:
 
 ```bash

@@ -62,6 +62,19 @@ origins before this model is used by the API.
 
 Artifacts are generated under data/runs/multistation_xgboost/.
 
+### Rolling-origin 1-hour evaluation
+
+Command:
+
+    uv run python scripts/evaluate_backtests.py --horizon 1 --model persistence --output data/runs/rolling_persistence_1h.json
+    uv run python scripts/evaluate_backtests.py --horizon 1 --model xgboost --n-estimators 120 --n-jobs 6 --output data/runs/rolling_xgboost_1h.json
+
+The evaluator uses five expanding-window quarterly test periods. Mean fold MAE
+was 16.383 for persistence and 14.466 for XGBoost, an 11.7% improvement.
+XGBoost improved 176 of 195 station-fold slices and regressed 19. The largest
+regression is still site_113 in the latest high-pollution quarter, so the model
+remains a challenger rather than the promoted API model.
+
 ## Next experiments
 
 1. Add rolling-origin backtests across seasons and report slice counts.
