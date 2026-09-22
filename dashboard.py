@@ -7,14 +7,17 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
+import pydeck as pdk
 import streamlit as st
 
+from src.delhi_aircast.aqi import pm25_proxy
 from scripts.train_multistation_baseline import _feature_frame
 
 
 ROOT = Path(__file__).resolve().parent
 DATASET = ROOT / "data/processed/delhi_unified_forecast.parquet"
 RUN_DIR = ROOT / "data/runs/final_xgboost"
+REGISTRY = ROOT / "data/processed/cpcb_panel_quality/station_registry.csv"
 HORIZONS = (1, 3, 6, 12, 24)
 
 
@@ -36,6 +39,33 @@ def prepare_features(frame: pd.DataFrame):
 @st.cache_resource
 def load_bundle(horizon: int) -> dict:
     return joblib.load(RUN_DIR / f"model_{horizon}h.joblib")
+
+
+@st.cache_data(show_spinner="Preparing the station forecast map…")
+def station_forecasts(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
+    registry = pd.read_csv(REGISTRY)
+    features, _, _ = prepare_features(frame)
+    bundle = load_bundle(horizon)
+    rows: list[dict] = []
+    for station_id, station in frame.groupby(frame["station_id"].astype(str)):
+        usable = station.dropna(subset=["pm25_current"])
+        if usable.empty:
+            continue
+        index = usable["timestamp_utc"].idxmax()
+        vector = features.loc[[index], bundle["feature_columns"]].astype(float)
+        forecast_pm25 = max(0.0, float(bundle["model"].predict(vector)[0]))
+        current_pm25 = float(frame.loc[index, "pm25_current"])
+        rows.append({
+            "station_id": station_id,
+            "current_pm25": current_pm25,
+            "forecast_pm25": forecast_pm25,
+            "current_aqi": pm25_proxy(current_pm25).value,
+            "forecast_aqi": pm25_proxy(forecast_pm25).value,
+            "forecast_category": pm25_proxy(forecast_pm25).category,
+            "issue_time": frame.loc[index, "timestamp_utc"],
+        })
+    scored = pd.DataFrame(rows)
+    return scored.merge(registry[["station_id", "station_name", "latitude", "longitude"]], on="station_id", how="left").dropna(subset=["latitude", "longitude"])
 
 
 def forecast(frame: pd.DataFrame, station_id: str, horizon: int) -> tuple[float, pd.Timestamp, str]:
@@ -87,6 +117,28 @@ left, middle, right = st.columns(3)
 left.metric("Latest PM2.5", f"{latest_pm25:.1f} µg/m³")
 middle.metric(f"Forecast in {horizon}h", f"{prediction:.1f} µg/m³")
 right.metric("Forecast issue time", issue_time.strftime("%Y-%m-%d %H:%M UTC"))
+
+forecast_aqi = pm25_proxy(prediction)
+st.info(f"Forecast AQI proxy: **{forecast_aqi.value} ({forecast_aqi.category})** · Based on predicted PM2.5 only; official composite AQI requires sufficient pollutant inputs.")
+
+st.subheader(f"Delhi station forecast map · +{horizon} hours")
+map_frame = station_forecasts(frame, horizon)
+map_frame["color"] = map_frame["forecast_aqi"].map(lambda value: [0, 180, 80] if value <= 100 else [255, 190, 0] if value <= 200 else [255, 90, 0] if value <= 300 else [180, 30, 60])
+map_frame["radius"] = map_frame["station_id"].eq(station_id).map({True: 140, False: 85})
+st.pydeck_chart(pdk.Deck(
+    map_style=None,
+    initial_view_state=pdk.ViewState(latitude=28.64, longitude=77.21, zoom=10.2, pitch=0),
+    layers=[pdk.Layer(
+        "ScatterplotLayer",
+        data=map_frame,
+        get_position="[longitude, latitude]",
+        get_fill_color="color",
+        get_radius="radius",
+        pickable=True,
+        opacity=0.85,
+    )],
+    tooltip={"html": "<b>{station_name}</b><br/>Current PM2.5: {current_pm25}<br/>Forecast PM2.5: {forecast_pm25}<br/>Forecast AQI proxy: {forecast_aqi} ({forecast_category})"},
+), height=500)
 
 st.subheader("Recent station history")
 history = station.set_index("timestamp_utc")["pm25_current"].dropna().tail(168).rename("PM2.5")
