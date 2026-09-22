@@ -130,6 +130,7 @@ def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | No
     features = bundle["feature_columns"]
     vector = _multistation_feature_row(latest, station_id, features)
     prediction = max(0.0, float(bundle["model"].predict(vector)[0]))
+    forecast_aqi = pm25_proxy(prediction)
     issued_at = pd.Timestamp(latest["timestamp_utc"])
     aux_columns = ["wx_temperature_c", "cams_pm25_lag6h", "firms_fire_count_prev_day"]
     return {
@@ -138,6 +139,9 @@ def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | No
         "target_timestamp_utc": (issued_at + pd.Timedelta(hours=horizon)).isoformat(),
         "current_pm25": float(latest["pm25_current"]),
         "forecast_pm25": prediction,
+        "forecast_aqi": forecast_aqi.value,
+        "forecast_aqi_category": forecast_aqi.category,
+        "forecast_aqi_status": forecast_aqi.status,
         "horizon_hours": horizon,
         "model": "xgboost",
         "model_version": feature_set,
@@ -189,12 +193,16 @@ def forecast(station_id: str, horizon: int = 1) -> dict[str, Any]:
         raise HTTPException(status_code=503, detail="No complete feature row is available")
     latest = usable.iloc[-1]
     prediction = float(bundle["model"].predict(latest[features].to_frame().T)[0])
+    forecast_aqi = pm25_proxy(prediction)
     return {
         "station_id": station_id,
         "as_of_utc": latest["timestamp_utc"].isoformat(),
         "target_timestamp_utc": latest["target_timestamp_utc"].isoformat(),
         "current_pm25": float(latest["pm25"]),
         "forecast_pm25": prediction,
+        "forecast_aqi": forecast_aqi.value,
+        "forecast_aqi_category": forecast_aqi.category,
+        "forecast_aqi_status": forecast_aqi.status,
         "model": "HistGradientBoostingRegressor",
         "feature_count": len(features),
         "horizon_hours": 1,
