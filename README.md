@@ -187,6 +187,17 @@ offline research panel from being presented as a live forecast until live
 feature ingestion is implemented.
 ```
 
+Launch the offline dashboard:
+
+```bash
+uv run streamlit run dashboard.py
+```
+
+The dashboard reads the saved unified feature table and final model artifacts
+locally. It provides station history, offline PM2.5 forecasts for 1/3/6/12/24
+hours, model quality metrics, and dataset provenance without requiring a live
+data connection.
+
 Optional comparison sources are listed in [`KAGGLE_DATASETS.md`](KAGGLE_DATASETS.md).
 They can be downloaded with `uv run python scripts/download_kaggle.py` after
 installing the external client with `uv tool install kaggle`.

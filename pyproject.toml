@@ -23,6 +23,7 @@ dependencies = [
     "xgboost>=3.4.1",
     "networkx>=3.6.1",
     "httpx2>=2.13.0",
+    "streamlit>=1.64.0",
 ]
 
 [project.scripts]
