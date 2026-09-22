@@ -130,3 +130,44 @@ At the latest checkpoint the project contained 6,956 inventoried files totaling
 The OpenAQ downloader is still running, so this is a checkpoint rather than a
 final inventory. The inventory script excludes partial/lock files and records
 SHA-256 hashes for completed files.
+
+### Spatial GNN challenger across forecast horizons
+
+The spatial graph challenger treats each coordinate-matched CPCB station as a
+node and connects each node to its six nearest stations. Node features include
+recent PM2.5, weather, and time-of-day values. Inputs are normalized using the
+training period; PM2.5 targets use train-fitted standardized `log1p`. Model
+selection uses the Jul–Sep 2025 validation interval and early stopping. The
+Oct–Dec 2025 test tail is held for final scoring. Each row compares the GNN,
+saved final XGBoost, and persistence on the same available station-hour rows
+for that horizon.
+
+| Horizon | Test rows | Persistence MAE | Spatial GNN MAE | Final XGBoost MAE | GNN AQI-category accuracy | XGBoost AQI-category accuracy |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1h | 80,224 | 22.879 | 21.802 | 18.887 | 78.7% | 81.2% |
+| 3h | 79,664 | 48.141 | 37.979 | 35.339 | 65.2% | 68.2% |
+| 6h | 79,254 | 70.650 | 49.393 | 44.246 | 57.9% | 61.7% |
+| 12h | 78,780 | 85.446 | 58.956 | 50.901 | 50.2% | 57.8% |
+| 24h | 78,257 | 58.672 | 61.145 | 56.117 | 48.6% | 54.7% |
+
+AQI and category metrics use the project's explicitly labelled PM2.5-only AQI
+proxy, not an official multi-pollutant composite. The GNN improves on
+persistence through 12 hours but loses to XGBoost at every horizon and loses to
+persistence at 24 hours. XGBoost therefore remains the selected model. The GNN
+is retained as a reproducible spatial challenger; these scores do not justify
+moving its training to a remote GPU. Metrics and checkpoints are generated
+under `data/runs/spatial_gnn/` and are local artifacts, not checked into Git.
+
+Reproduce the six-hour experiment with:
+
+    uv run python scripts/train_spatial_gnn.py --horizon 6 --epochs 20 --lr 0.001 --patience 5
+
+### Dashboard model comparison
+
+For the selected station, issue hour, and horizon, the offline dashboard scores
+all compatible saved artifacts together: final XGBoost, persistence, the
+spatial GNN where its full graph input is available, and 48-hour LSTM/TCN at
+the six-hour horizon. It reports PM2.5 and its explicitly-labelled AQI proxy
+and category for each. An optional simple mean of learned-model predictions is
+shown as experimental and unvalidated; it does not replace XGBoost. Artifacts
+that are absent or lack compatible inputs are omitted rather than synthesized.

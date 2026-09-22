@@ -91,6 +91,14 @@ Train CPU sequence challengers and compare them with the same test cohort:
     uv run python scripts/train_sequence_model.py --model tcn --horizon 6 --sequence-length 48 --stride 12 --epochs 3
     uv run python scripts/compare_sequence_cohort.py --model tcn --horizon 6 --sequence-length 48 --stride 12
 
+Train the spatial graph challenger for each forecast horizon (CPU):
+
+    uv run python scripts/train_spatial_gnn.py --horizon 1 --epochs 20 --lr 0.001 --patience 5
+    uv run python scripts/train_spatial_gnn.py --horizon 3 --epochs 20 --lr 0.001 --patience 5
+    uv run python scripts/train_spatial_gnn.py --horizon 6 --epochs 20 --lr 0.001 --patience 5
+    uv run python scripts/train_spatial_gnn.py --horizon 12 --epochs 20 --lr 0.001 --patience 5
+    uv run python scripts/train_spatial_gnn.py --horizon 24 --epochs 20 --lr 0.001 --patience 5
+
 Train the final offline-serving models using the maximum leakage-safe unified
 feature table. This fits each horizon on all observations before the held-out
 test tail and writes the model artifacts and evaluation summary under
@@ -196,7 +204,10 @@ uv run streamlit run dashboard.py
 The dashboard reads the saved unified feature table and final model artifacts
 locally. It provides station history, offline PM2.5 forecasts for 1/3/6/12/24
 hours, model quality metrics, and dataset provenance without requiring a live
-data connection.
+data connection. For the selected station and issue time, it also compares all
+compatible saved model predictions (XGBoost, persistence, GNN, and 6-hour LSTM/
+TCN) with their PM2.5-derived AQI proxy. A simple model mean is labelled
+experimental and unvalidated; XGBoost remains the selected model.
 
 Optional comparison sources are listed in [`KAGGLE_DATASETS.md`](KAGGLE_DATASETS.md).
 They can be downloaded with `uv run python scripts/download_kaggle.py` after

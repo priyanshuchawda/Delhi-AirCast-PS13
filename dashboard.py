@@ -6,12 +6,17 @@ import json
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
+import torch
+from torch import nn
 
 from src.delhi_aircast.aqi import pm25_proxy
 from scripts.train_multistation_baseline import _feature_frame
+from scripts.train_sequence_model import LSTMForecaster, TCNForecaster, SEQUENCE_FEATURES
+from scripts.train_spatial_gnn import FEATURES as GNN_FEATURES, SpatialGNN
 
 
 ROOT = Path(__file__).resolve().parent
@@ -39,6 +44,84 @@ def prepare_features(frame: pd.DataFrame):
 @st.cache_resource
 def load_bundle(horizon: int) -> dict:
     return joblib.load(RUN_DIR / f"model_{horizon}h.joblib")
+
+
+@st.cache_resource
+def load_torch_bundle(path: str) -> dict:
+    return torch.load(path, map_location="cpu", weights_only=False)
+
+
+def model_comparison(frame: pd.DataFrame, station_id: str, horizon: int, issue_time: pd.Timestamp) -> pd.DataFrame:
+    """Score every compatible saved model for the same station and issue hour."""
+    results: list[dict[str, object]] = []
+    station_rows = frame[(frame["station_id"].astype(str) == station_id) & (frame["timestamp_utc"] == issue_time)]
+    if station_rows.empty:
+        return pd.DataFrame()
+    source_index = station_rows.index[0]
+    current = float(station_rows.iloc[0]["pm25_current"])
+
+    def add(name: str, value: float, note: str = "") -> None:
+        value = max(0.0, float(value))
+        proxy = pm25_proxy(value)
+        results.append({"Model": name, "Forecast PM2.5": value, "AQI proxy": proxy.value, "Proxy category": proxy.category, "Note": note})
+
+    features, _, _ = prepare_features(frame)
+    xgb = load_bundle(horizon)
+    vector = features.loc[[source_index], xgb["feature_columns"]].astype(float)
+    add("XGBoost (selected)", xgb["model"].predict(vector)[0], "Primary model")
+    add("Persistence", current, "Current PM2.5 carried forward")
+
+    gnn_path = ROOT / f"data/runs/spatial_gnn/model_{horizon}h.pt"
+    if gnn_path.exists():
+        artifact = load_torch_bundle(str(gnn_path))
+        ids = artifact["station_ids"]
+        at_time = frame[frame["timestamp_utc"] == issue_time].copy()
+        at_time["station_id"] = at_time["station_id"].astype(str)
+        rows = at_time.drop_duplicates("station_id").set_index("station_id")
+        if all(station in rows.index for station in ids):
+            raw = rows.loc[ids, list(GNN_FEATURES)].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float32)
+            means = np.asarray(artifact["means"], dtype=np.float32)
+            scales = np.asarray(artifact["scales"], dtype=np.float32)
+            raw = np.where(np.isfinite(raw), raw, means)
+            normalized = torch.tensor((raw - means) / scales, dtype=torch.float32)
+            graph = torch.tensor(artifact["adjacency"], dtype=torch.float32)
+            model = SpatialGNN(len(GNN_FEATURES), 48, graph)
+            model.load_state_dict(artifact["state_dict"])
+            model.eval()
+            with torch.no_grad():
+                output = model(normalized)[ids.index(station_id)].item()
+                add("Spatial GNN", np.expm1(output * artifact["target_scale"] + artifact["target_mean"]), "Research challenger")
+
+    if horizon == 6:
+        ordered = frame[frame["station_id"].astype(str) == station_id].sort_values("timestamp_utc")
+        ordered = ordered[ordered["timestamp_utc"] <= issue_time].tail(48)
+        if len(ordered) == 48 and (ordered["timestamp_utc"].diff().dropna() == pd.Timedelta(hours=1)).all():
+            for name in ("lstm", "tcn"):
+                path = ROOT / f"data/runs/sequence_models/{name}_6h.pt"
+                if not path.exists():
+                    continue
+                artifact = load_torch_bundle(str(path))
+                if station_id not in artifact["station_ids"]:
+                    continue
+                prep = artifact["preprocessing"]
+                raw = ordered[list(SEQUENCE_FEATURES)].to_numpy(dtype=np.float32)
+                missing = np.isnan(raw).astype(np.float32)
+                raw = np.where(np.isnan(raw), np.asarray(prep["medians"], dtype=np.float32), raw)
+                normalized = (raw - np.asarray(prep["means"], dtype=np.float32)) / np.asarray(prep["scales"], dtype=np.float32)
+                values = torch.tensor(np.concatenate([normalized, missing], axis=1)[None], dtype=torch.float32)
+                station_index = torch.tensor([artifact["station_ids"].index(station_id)])
+                model = LSTMForecaster(values.shape[2], len(artifact["station_ids"])) if name == "lstm" else TCNForecaster(values.shape[2], len(artifact["station_ids"]))
+                model.load_state_dict(artifact["state_dict"])
+                model.eval()
+                with torch.no_grad():
+                    log_prediction = model(values, station_index).item()
+                add(name.upper(), np.expm1(log_prediction * prep["target_log_scale"][0] + prep["target_log_mean"][0]), "Sequence challenger")
+
+    learned = [row["Forecast PM2.5"] for row in results if row["Model"] not in ("Persistence", "XGBoost (selected)")]
+    learned.append(results[0]["Forecast PM2.5"])
+    if len(learned) > 1:
+        add("Experimental model mean", np.mean(learned), "Unvalidated; simple mean of available learned models")
+    return pd.DataFrame(results)
 
 
 @st.cache_data(show_spinner="Preparing the station forecast map…")
@@ -121,6 +204,14 @@ right.metric("Forecast issue time", issue_time.strftime("%Y-%m-%d %H:%M UTC"))
 forecast_aqi = pm25_proxy(prediction)
 st.info(f"Forecast AQI proxy: **{forecast_aqi.value} ({forecast_aqi.category})** · Based on predicted PM2.5 only; official composite AQI requires sufficient pollutant inputs.")
 
+st.subheader("Model predictions for this station and issue time")
+comparison = model_comparison(frame, station_id, horizon, issue_time)
+if not comparison.empty:
+    st.dataframe(comparison.style.format({"Forecast PM2.5": "{:.1f}"}), hide_index=True, use_container_width=True)
+    st.caption("Models score the same station and issue hour. The mean is an exploratory blend, not a separately trained or validated model; the selected forecast remains XGBoost.")
+else:
+    st.caption("No compatible saved model artifacts are available for this selection.")
+
 st.subheader(f"Delhi station forecast map · +{horizon} hours")
 map_frame = station_forecasts(frame, horizon)
 map_frame["color"] = map_frame["forecast_aqi"].map(lambda value: [0, 180, 80] if value <= 100 else [255, 190, 0] if value <= 200 else [255, 90, 0] if value <= 300 else [180, 30, 60])
@@ -154,6 +245,34 @@ for col, h in zip(cols, HORIZONS):
     result = json.loads(result_path.read_text(encoding="utf-8"))
     col.metric(f"{h}h MAE", f"{result['xgboost']['mae']:.1f}", f"{metric_gain(result):+.1f}% vs persistence")
 
+st.subheader("Spatial model validation")
+gnn_rows = []
+for h in HORIZONS:
+    comparison_path = ROOT / f"data/runs/spatial_gnn/model_{h}h.json"
+    if not comparison_path.exists():
+        continue
+    comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
+    gnn_rows.append({
+        "Horizon": f"{h}h",
+        "Test station-hours": comparison["test_rows"],
+        "Persistence MAE": comparison["persistence"]["mae"],
+        "Spatial GNN MAE": comparison["metrics"]["mae"],
+        "XGBoost MAE (same rows)": comparison["xgboost_same_cohort"]["mae"],
+        "GNN AQI category accuracy": comparison["aqi_proxy"]["category_accuracy"],
+        "XGBoost AQI category accuracy": comparison["xgboost_aqi_proxy_same_cohort"]["category_accuracy"],
+    })
+if gnn_rows:
+    st.dataframe(pd.DataFrame(gnn_rows).set_index("Horizon").style.format({
+        "Persistence MAE": "{:.1f}",
+        "Spatial GNN MAE": "{:.1f}",
+        "XGBoost MAE (same rows)": "{:.1f}",
+        "GNN AQI category accuracy": "{:.1%}",
+        "XGBoost AQI category accuracy": "{:.1%}",
+    }), use_container_width=True)
+    st.caption("The GNN is a spatial challenger. XGBoost remains selected because it has lower test MAE at all horizons; at 24h, GNN also trails persistence.")
+else:
+    st.caption("Train the spatial challenger to show its same-cohort comparison here.")
+
 with st.expander("Model and dataset details"):
     st.write({
         "station": station_id,
@@ -161,7 +280,7 @@ with st.expander("Model and dataset details"):
         "stations": len(stations),
         "coverage": f"{frame['timestamp_utc'].min():%Y-%m-%d} → {frame['timestamp_utc'].max():%Y-%m-%d}",
         "feature set": feature_set,
-        "model": "offline XGBoost final artifact",
+        "model": "offline XGBoost primary; available sequence/GNN challengers shown below",
         "sources": "CPCB/OpenCity, Open-Meteo weather, CAMS, NASA FIRMS",
     })
 
