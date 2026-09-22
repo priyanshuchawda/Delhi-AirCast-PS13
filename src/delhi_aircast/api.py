@@ -34,21 +34,44 @@ def _station_summary_path() -> Path:
     return DATA_ROOT / "data/processed/cpcb_2024_25_hourly/station_summary.csv"
 
 
+def _horizon_artifact_path(horizon: int, run_dir: str) -> Path:
+    return DATA_ROOT / f"data/runs/{run_dir}/model_{horizon}h.joblib"
+
+
+def _resolve_model_bundle(horizon: int) -> tuple[dict[str, Any], Path] | None:
+    """Prefer the final unified-feature artifact, then the multi-station baseline."""
+    for run_dir in ("final_xgboost", "multistation_xgboost"):
+        path = _horizon_artifact_path(horizon, run_dir)
+        if path.exists():
+            return joblib.load(path), path
+    return None
+
+
+def _forecast_dataset(feature_set: str) -> Path:
+    if feature_set == "unified-spatial-temporal":
+        unified = DATA_ROOT / "data/processed/delhi_unified_forecast.parquet"
+        if unified.exists():
+            return unified
+    return DATA_ROOT / "data/processed/delhi_multistation_forecast.parquet"
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     summary = _station_summary_path()
     multistation_dataset = DATA_ROOT / "data/processed/delhi_multistation_forecast.parquet"
-    available_horizons = [
-        horizon
-        for horizon in (1, 3, 6, 12, 24)
-        if (DATA_ROOT / f"data/runs/multistation_xgboost/model_{horizon}h.joblib").exists()
-    ]
+    unified_dataset = DATA_ROOT / "data/processed/delhi_unified_forecast.parquet"
+
+    def horizons(run_dir: str) -> list[int]:
+        return [h for h in (1, 3, 6, 12, 24) if _horizon_artifact_path(h, run_dir).exists()]
+
     return {
         "status": "ok",
         "aqi_engine": "available",
         "station_summary": summary.exists(),
         "multistation_dataset": multistation_dataset.exists(),
-        "multistation_xgboost_horizons": available_horizons,
+        "unified_dataset": unified_dataset.exists(),
+        "multistation_xgboost_horizons": horizons("multistation_xgboost"),
+        "final_xgboost_horizons": horizons("final_xgboost"),
         "data_root": str(DATA_ROOT.resolve()),
     }
 
@@ -85,9 +108,13 @@ def _multistation_feature_row(row: pd.Series, station_id: str, feature_columns: 
 
 
 def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | None:
-    dataset = DATA_ROOT / "data/processed/delhi_multistation_forecast.parquet"
-    model_path = DATA_ROOT / f"data/runs/multistation_xgboost/model_{horizon}h.joblib"
-    if not dataset.exists() or not model_path.exists():
+    bundle_path = _resolve_model_bundle(horizon)
+    if bundle_path is None:
+        return None
+    bundle, model_path = bundle_path
+    feature_set = bundle.get("feature_set", "multistation-spatial-temporal")
+    dataset = _forecast_dataset(feature_set)
+    if not dataset.exists():
         return None
     try:
         frame = pd.read_parquet(dataset, filters=[("station_id", "=", station_id)])
@@ -100,11 +127,11 @@ def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | No
     if usable.empty:
         raise HTTPException(status_code=503, detail="No current PM2.5 feature row is available")
     latest = usable.iloc[-1]
-    bundle = joblib.load(model_path)
     features = bundle["feature_columns"]
     vector = _multistation_feature_row(latest, station_id, features)
     prediction = max(0.0, float(bundle["model"].predict(vector)[0]))
     issued_at = pd.Timestamp(latest["timestamp_utc"])
+    aux_columns = ["wx_temperature_c", "cams_pm25_lag6h", "firms_fire_count_prev_day"]
     return {
         "station_id": station_id,
         "as_of_utc": issued_at.isoformat(),
@@ -112,9 +139,20 @@ def _multistation_forecast(station_id: str, horizon: int) -> dict[str, Any] | No
         "current_pm25": float(latest["pm25_current"]),
         "forecast_pm25": prediction,
         "horizon_hours": horizon,
-        "model": "global_xgboost",
+        "model": "xgboost",
+        "model_version": feature_set,
         "model_artifact": str(model_path),
+        "feature_set": feature_set,
         "feature_count": len(features),
+        "interval_method": bundle.get("point_in_time_policy", "station lag/rolling features stamped at t"),
+        "aux_sources": {
+            "weather": bool(pd.notna(latest.get("wx_temperature_c"))),
+            "cams": bool(pd.notna(latest.get("cams_pm25_lag6h"))),
+            "cams_publish_lag_h": 6,
+            "firms_previous_day": bool(pd.notna(latest.get("firms_fire_count_prev_day"))),
+        }
+        if all(column in latest.index for column in aux_columns)
+        else "not_applicable",
         "quality_status": "historical_artifact",
         "source_status": "offline_historical_panel",
     }

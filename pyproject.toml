@@ -1,7 +1,7 @@
 [project]
 name = "delhi-aircast-report"
 version = "0.1.0"
-description = "Add your description here"
+description = "Offline Delhi PM2.5 forecasting, AQI calculation, and reproducible model evaluation"
 readme = "README.md"
 authors = [
     { name = "Priyanshu Chawda", email = "hellopriyanshu4@gmail.com" }
@@ -22,6 +22,7 @@ dependencies = [
     "torch>=2.14.0",
     "xgboost>=3.4.1",
     "networkx>=3.6.1",
+    "httpx2>=2.13.0",
 ]
 
 [project.scripts]

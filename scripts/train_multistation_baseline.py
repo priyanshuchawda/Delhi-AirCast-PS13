@@ -40,7 +40,12 @@ def _feature_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, list[str], dict[s
     return features, list(features.columns), station_codes
 
 
-def train(dataset_path: Path, run_dir: Path, horizon: int) -> dict[str, object]:
+def train(
+    dataset_path: Path,
+    run_dir: Path,
+    horizon: int,
+    n_jobs: int = 8,
+) -> dict[str, object]:
     target = f"target_pm25_{horizon}h"
     frame = pd.read_parquet(dataset_path).sort_values("timestamp_utc").reset_index(drop=True)
     frame["timestamp_utc"] = pd.to_datetime(frame["timestamp_utc"], utc=True)
@@ -66,7 +71,7 @@ def train(dataset_path: Path, run_dir: Path, horizon: int) -> dict[str, object]:
         colsample_bytree=0.85,
         reg_lambda=2.0,
         tree_method="hist",
-        n_jobs=8,
+        n_jobs=n_jobs,
         random_state=42,
     )
     model.fit(feature_frame.loc[partitions["train"], feature_columns], frame.loc[partitions["train"], target])
@@ -130,8 +135,9 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--run-dir", type=Path, default=DEFAULT_RUN_DIR)
     parser.add_argument("--horizon", type=int, choices=(1, 3, 6, 12, 24), default=1)
+    parser.add_argument("--n-jobs", type=int, default=8)
     args = parser.parse_args()
-    result = train(args.dataset, args.run_dir, args.horizon)
+    result = train(args.dataset, args.run_dir, args.horizon, args.n_jobs)
     test = result["splits"]["test"]
     print(
         "Test {h}h MAE: persistence={p:.3f}, xgboost={m:.3f}; rows={rows}".format(

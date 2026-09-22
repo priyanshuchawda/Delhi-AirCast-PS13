@@ -104,7 +104,7 @@ class OpenAQClient:
                     time.sleep(delay)
                     continue
                 raise RuntimeError(f"GET {path} failed with HTTP {error.code}: {body[:300]}")
-            except (URLError, TimeoutError, json.JSONDecodeError) as error:
+            except (OSError, URLError, TimeoutError, json.JSONDecodeError) as error:
                 self.last_request = time.monotonic()
                 if attempt < 4:
                     delay = attempt * 3

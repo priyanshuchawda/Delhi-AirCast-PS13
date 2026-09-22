@@ -15,5 +15,8 @@ data/processed/
 data/cache/
 data/runs/
 
+# Temporary archive extraction directory
+$stage/
+
 # Local secrets for optional APIs
 .env

@@ -91,6 +91,19 @@ Train CPU sequence challengers and compare them with the same test cohort:
     uv run python scripts/train_sequence_model.py --model tcn --horizon 6 --sequence-length 48 --stride 12 --epochs 3
     uv run python scripts/compare_sequence_cohort.py --model tcn --horizon 6 --sequence-length 48 --stride 12
 
+Train the final offline-serving models using the maximum leakage-safe unified
+feature table. This fits each horizon on all observations before the held-out
+test tail and writes the model artifacts and evaluation summary under
+`data/runs/final_xgboost/`:
+
+```bash
+uv run python scripts/train_final_models.py --n-jobs 4
+```
+
+The local API prefers these final offline artifacts for 1/3/6/12/24-hour
+forecasts. The service intentionally reports them as historical/offline
+forecasts; no live-data dependency is required for this project version.
+
 Acquire OpenAQ Delhi/NCR batches with a verified key kept outside the project:
 
 ```bash
