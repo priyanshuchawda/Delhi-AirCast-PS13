@@ -222,6 +222,49 @@ compatible saved model predictions (XGBoost, persistence, GNN, and 6-hour LSTM/
 TCN) with their PM2.5-derived AQI proxy. A simple model mean is labelled
 experimental and unvalidated; XGBoost remains the selected model.
 
+## Full-stack web application
+
+The TypeScript/Next.js dashboard and FastAPI model service can be run together
+without copying the research panel into the web image. Build a compact,
+historical serving bundle (39 station snapshots, 72-hour station histories,
+and the trained model artifacts; roughly 48 MB locally):
+
+```powershell
+uv run python scripts/build_serving_bundle.py --output .local-serving
+$env:DELHI_AIRCAST_DATA_ROOT = (Resolve-Path .local-serving).Path
+uv run uvicorn delhi_aircast.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+In a second terminal, start the Next.js app:
+
+```powershell
+cd aircast-web
+npm ci
+$env:AIRCAST_API_URL = 'http://127.0.0.1:8000'
+npm run dev
+```
+
+Open `http://localhost:3000`. For the containerized local deployment, first
+build the same bundle, then run `docker compose up --build`; the API mounts only
+the bundle's `data/` directory read-only, and Next.js proxies requests to the
+private API service. The data and weights stay out of Git and out of the
+application source images. For a hosted deployment, mount/upload the generated
+bundle to persistent artifact storage and set `DELHI_AIRCAST_BUNDLE_PATH` to
+that mounted directory. The interface labels all outputs as historical; it
+does not imply live sensor data or validated continuous neighbourhood
+interpolation.
+
+Run the service and frontend checks with:
+
+```powershell
+uv run pytest -q
+cd aircast-web
+npm run typecheck
+npm run lint
+npm run build
+npm audit --omit=dev
+```
+
 Optional comparison sources are listed in [`KAGGLE_DATASETS.md`](KAGGLE_DATASETS.md).
 They can be downloaded with `uv run python scripts/download_kaggle.py` after
 installing the external client with `uv tool install kaggle`.

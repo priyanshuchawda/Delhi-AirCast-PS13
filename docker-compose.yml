@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DELHI_AIRCAST_DATA_ROOT: /app
+      DELHI_AIRCAST_ALLOWED_ORIGINS: http://localhost:3000
+    volumes:
+      - ${DELHI_AIRCAST_BUNDLE_PATH:-./.local-serving}/data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "uv", "run", "--no-sync", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  web:
+    build:
+      context: ./aircast-web
+      dockerfile: Dockerfile
+      args:
+        AIRCAST_API_URL: http://api:8000
+    environment:
+      AIRCAST_API_URL: http://api:8000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy

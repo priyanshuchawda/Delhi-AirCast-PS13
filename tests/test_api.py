@@ -1,6 +1,8 @@
 import pandas as pd
+import pytest
+from fastapi import HTTPException
 
-from delhi_aircast.api import AQIRequest, _multistation_feature_row, aqi, health
+from delhi_aircast.api import AQIRequest, _multistation_feature_row, aqi, health, station_history, stations_forecast
 
 
 def test_health_exposes_engine_and_local_data_state():
@@ -10,6 +12,19 @@ def test_health_exposes_engine_and_local_data_state():
     assert "unified_dataset" in payload
     assert "final_xgboost_horizons" in payload
     assert isinstance(payload["final_xgboost_horizons"], list)
+    assert "serving_features" in payload
+
+
+def test_station_forecast_rejects_unsupported_horizons():
+    with pytest.raises(HTTPException) as error:
+        stations_forecast(horizon=2)
+    assert error.value.status_code == 400
+
+
+def test_history_rejects_unbounded_requests():
+    with pytest.raises(HTTPException) as error:
+        station_history("site_105", hours=500)
+    assert error.value.status_code == 400
 
 
 def test_aqi_endpoint_keeps_pm25_proxy_explicit():
