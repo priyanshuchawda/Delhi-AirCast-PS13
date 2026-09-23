@@ -171,3 +171,79 @@ the six-hour horizon. It reports PM2.5 and its explicitly-labelled AQI proxy
 and category for each. An optional simple mean of learned-model predictions is
 shown as experimental and unvalidated; it does not replace XGBoost. Artifacts
 that are absent or lack compatible inputs are omitted rather than synthesized.
+
+### Feature-family and model-strategy diagnostic
+
+`uv run python scripts/compare_model_strategies.py --horizons 1 6 24 --n-jobs 4`
+compares CPCB sensor/time/neighbour features, incremental weather and CAMS
+families, and the all-source CPCB + Open-Meteo + CAMS + FIRMS feature set.
+It also compares XGBoost with scikit-learn histogram gradient boosting. The
+diagnostic uses a deterministic one-in-three training-row sample per station
+to keep CPU cost bounded; it retains every validation/test row and uses the
+same chronological windows for each candidate. Blend weight is selected only
+on Jul–Sep 2025 validation MAE; Oct–Dec remains the held-out test interval.
+
+Six-hour findings from the local run:
+
+| Features / model | Validation PM2.5 MAE | Held-out PM2.5 MAE |
+|---|---:|---:|
+| CPCB sensor/time/neighbour features, XGBoost | 11.834 | 47.930 |
+| + weather, XGBoost | 12.117 | 45.618 |
+| + weather and CAMS, XGBoost | 12.291 | 44.547 |
+| + FIRMS (all sources), XGBoost | 12.906 | 44.283 |
+| All sources, HistGradientBoosting |  | 44.587 |
+| Validation-selected XGBoost/HistGradientBoosting blend |  | 44.283 |
+
+The summer validation distribution is much easier than the polluted Oct–Dec
+test tail, so its low absolute errors should not be read as expected winter
+performance. In this sampled six-hour comparison, auxiliary feature groups
+improve the polluted test MAE by 3.647 µg/m³ versus CPCB-only features, while
+the more complex tree blend is rejected by validation (it selects XGBoost
+alone). This supports retaining the existing all-source XGBoost; it does not
+justify promoting a neural model or a blend. Final serving artifacts remain
+trained on all available pre-test rows, not the diagnostic subsample.
+
+Across all evaluated horizons, auxiliary data does not help uniformly. At one
+hour, CPCB-only XGBoost scores 19.376 µg/m³ held-out PM2.5 MAE versus 19.595
+for all sources; at 24 hours, all-source XGBoost scores 54.741 versus 54.618
+for CPCB-only. At six hours, weather, CAMS, and FIRMS reduce CPCB-only MAE
+from 47.930 to 44.283. The 24-hour validation-selected blend gains only
+0.010 µg/m³ over XGBoost on test (54.608 vs 54.618), too little to justify
+another serving model. Keep all-source XGBoost as the practical six-hour
+choice; do not claim every feature family helps at every horizon.
+
+### Multi-pollutant six-hour CPCB AQI estimate
+
+The PM2.5-only forecast does not satisfy the multi-pollutant AQI part of the
+problem statement, so this experiment trains separate six-hour XGBoost models
+for PM10, NO2, CO, and O3 and combines them with the existing PM2.5 model using
+the project's CPCB sub-index/AQI calculation. The extra models are fitted on
+all eligible pre-test rows (target timestamps are purged at the split); the
+Oct–Dec 2025 test tail was already used in earlier candidate comparisons, so
+these are internal historical results, not an untouched external benchmark.
+
+On the identical 81,074-row test cohort where PM2.5 is available, the
+five-pollutant subset AQI estimate scores MAE 47.10 and category accuracy
+62.10%. A PM2.5-only sub-index proxy scores MAE 51.68 and 57.77% category
+accuracy against the same observed composite AQI: a 4.58-point MAE reduction
+and 4.33 percentage-point category-accuracy gain. AQI persistence scores MAE
+75.97 and 47.18% category accuracy on that cohort. This is a measured
+improvement, but not a complete all-pollutant forecast: SO2 and NH3 are
+omitted, AQI is calculated from the available forecast subset, and the
+dashboard serves this model only at six hours. Per-pollutant scores, cohort
+rules, and artifact paths are recorded in the ignored local
+`data/runs/multipollutant_aqi_final/evaluation_6h.json`.
+
+Train/rebuild the CPU artifacts with:
+
+    uv run python scripts/train_multipollutant_aqi.py --horizon 6 --run-dir data/runs/multipollutant_aqi_final
+
+Artifacts and evaluation outputs remain local under `data/runs/`; they are
+excluded from Git along with source datasets.
+
+OpenAQ is not pooled into CPCB labels. A preliminary nearest-coordinate
+cross-source check found 47,649 same-hour overlapping PM2.5 pairs across 35
+stations, but about 80.7 µg/m³ MAE and only 0.50 overall correlation. The
+station-by-station spread is large. Until timestamp aggregation and monitor
+identity are reconciled, that data is useful for a data-quality investigation,
+not as interchangeable supervised truth or a clean external score.

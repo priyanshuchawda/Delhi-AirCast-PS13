@@ -13,7 +13,7 @@ import streamlit as st
 import torch
 from torch import nn
 
-from src.delhi_aircast.aqi import pm25_proxy
+from src.delhi_aircast.aqi import calculate_aqi, pm25_proxy
 from scripts.train_multistation_baseline import _feature_frame
 from scripts.train_sequence_model import LSTMForecaster, TCNForecaster, SEQUENCE_FEATURES
 from scripts.train_spatial_gnn import FEATURES as GNN_FEATURES, SpatialGNN
@@ -22,8 +22,10 @@ from scripts.train_spatial_gnn import FEATURES as GNN_FEATURES, SpatialGNN
 ROOT = Path(__file__).resolve().parent
 DATASET = ROOT / "data/processed/delhi_unified_forecast.parquet"
 RUN_DIR = ROOT / "data/runs/final_xgboost"
+MULTIPOLLUTANT_RUN_DIR = ROOT / "data/runs/multipollutant_aqi_final"
 REGISTRY = ROOT / "data/processed/cpcb_panel_quality/station_registry.csv"
 HORIZONS = (1, 3, 6, 12, 24)
+AQI_POLLUTANTS = ("pm25", "pm10", "no2", "co", "o3")
 
 
 st.set_page_config(page_title="Delhi AirCast", page_icon="🌫️", layout="wide")
@@ -49,6 +51,29 @@ def load_bundle(horizon: int) -> dict:
 @st.cache_resource
 def load_torch_bundle(path: str) -> dict:
     return torch.load(path, map_location="cpu", weights_only=False)
+
+
+@st.cache_resource
+def load_pollutant_bundle(pollutant: str, horizon: int) -> dict:
+    if pollutant == "pm25":
+        return load_bundle(horizon)
+    return joblib.load(MULTIPOLLUTANT_RUN_DIR / f"{pollutant}_{horizon}h.joblib")
+
+
+def multipollutant_forecast(features: pd.DataFrame, row_index: int, horizon: int):
+    """Return a CPCB AQI estimate only when the full tested pollutant set exists."""
+    if not all(
+        (MULTIPOLLUTANT_RUN_DIR / f"{pollutant}_{horizon}h.joblib").exists()
+        for pollutant in AQI_POLLUTANTS
+        if pollutant != "pm25"
+    ):
+        return None
+    concentrations: dict[str, float] = {}
+    for pollutant in AQI_POLLUTANTS:
+        bundle = load_pollutant_bundle(pollutant, horizon)
+        vector = features.loc[[row_index], bundle["feature_columns"]].astype(float)
+        concentrations[pollutant] = max(0.0, float(bundle["model"].predict(vector)[0]))
+    return concentrations, calculate_aqi(concentrations)
 
 
 def model_comparison(frame: pd.DataFrame, station_id: str, horizon: int, issue_time: pd.Timestamp) -> pd.DataFrame:
@@ -138,13 +163,19 @@ def station_forecasts(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
         vector = features.loc[[index], bundle["feature_columns"]].astype(float)
         forecast_pm25 = max(0.0, float(bundle["model"].predict(vector)[0]))
         current_pm25 = float(frame.loc[index, "pm25_current"])
+        multi = multipollutant_forecast(features, index, horizon)
+        proxy = pm25_proxy(forecast_pm25)
+        aqi_value = multi[1].value if multi and multi[1].value is not None else proxy.value
+        aqi_category = multi[1].category if multi and multi[1].value is not None else proxy.category
+        aqi_type = "5-pollutant CPCB estimate" if multi and multi[1].value is not None else "PM2.5-only proxy"
         rows.append({
             "station_id": station_id,
             "current_pm25": current_pm25,
             "forecast_pm25": forecast_pm25,
             "current_aqi": pm25_proxy(current_pm25).value,
-            "forecast_aqi": pm25_proxy(forecast_pm25).value,
-            "forecast_category": pm25_proxy(forecast_pm25).category,
+            "forecast_aqi": aqi_value,
+            "forecast_category": aqi_category,
+            "forecast_aqi_type": aqi_type,
             "issue_time": frame.loc[index, "timestamp_utc"],
         })
     scored = pd.DataFrame(rows)
@@ -201,8 +232,17 @@ left.metric("Latest PM2.5", f"{latest_pm25:.1f} µg/m³")
 middle.metric(f"Forecast in {horizon}h", f"{prediction:.1f} µg/m³")
 right.metric("Forecast issue time", issue_time.strftime("%Y-%m-%d %H:%M UTC"))
 
+feature_frame, _, _ = prepare_features(frame)
+issue_index = station.index[station["timestamp_utc"].eq(issue_time)][0]
+multi_forecast = multipollutant_forecast(feature_frame, issue_index, horizon)
 forecast_aqi = pm25_proxy(prediction)
-st.info(f"Forecast AQI proxy: **{forecast_aqi.value} ({forecast_aqi.category})** · Based on predicted PM2.5 only; official composite AQI requires sufficient pollutant inputs.")
+if multi_forecast and multi_forecast[1].value is not None:
+    concentrations, composite = multi_forecast
+    st.info(f"Six-hour CPCB AQI estimate: **{composite.value} ({composite.category})** · Forecast sub-indices from PM₂.₅, PM₁₀, NO₂, CO and O₃.")
+    st.caption("This uses the available five-pollutant forecast subset; SO₂ and NH₃ are not forecast in this model version. It is an offline historical forecast, not current live air quality.")
+    st.dataframe(pd.DataFrame([{"Pollutant": p.upper(), "Forecast concentration": value, "CPCB sub-index": composite.subindices.get(p)} for p, value in concentrations.items()]), hide_index=True, width="stretch")
+else:
+    st.info(f"Forecast AQI proxy: **{forecast_aqi.value} ({forecast_aqi.category})** · Based on predicted PM₂.₅ only; official CPCB AQI needs at least three valid pollutant sub-indices including PM₂.₅ or PM₁₀.")
 
 st.subheader("Model predictions for this station and issue time")
 comparison = model_comparison(frame, station_id, horizon, issue_time)
@@ -228,8 +268,9 @@ st.pydeck_chart(pdk.Deck(
         pickable=True,
         opacity=0.85,
     )],
-    tooltip={"html": "<b>{station_name}</b><br/>Current PM2.5: {current_pm25}<br/>Forecast PM2.5: {forecast_pm25}<br/>Forecast AQI proxy: {forecast_aqi} ({forecast_category})"},
+    tooltip={"html": "<b>{station_name}</b><br/>Current PM2.5: {current_pm25}<br/>Forecast PM2.5: {forecast_pm25}<br/>{forecast_aqi_type}: {forecast_aqi} ({forecast_category})"},
 ), height=500)
+st.caption("Map markers show monitored CPCB stations; they are not a validated continuous neighbourhood-level pollution surface.")
 
 st.subheader("Recent station history")
 history = station.set_index("timestamp_utc")["pm25_current"].dropna().tail(168).rename("PM2.5")

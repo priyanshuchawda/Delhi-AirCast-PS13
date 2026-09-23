@@ -80,6 +80,19 @@ Train the first global multi-station XGBoost challenger:
 The measured results and promotion decision are tracked in
 EXPERIMENTS.md.
 
+Compare feature families and candidate model strategies without using the
+test tail to select the blend:
+
+    uv run python scripts/compare_model_strategies.py --horizons 1 6 24 --n-jobs 4
+
+Train the six-hour multi-pollutant AQI estimate (PM2.5, PM10, NO2, CO, O3):
+
+    uv run python scripts/train_multipollutant_aqi.py --horizon 6 --run-dir data/runs/multipollutant_aqi_final
+
+The dashboard uses these local artifacts for the six-hour CPCB AQI subset
+estimate; SO2 and NH3 are not yet modelled. Data and model artifacts stay
+local and are intentionally excluded from Git.
+
 Run expanding-window quarterly backtests:
 
     uv run python scripts/evaluate_backtests.py --horizon 1 --model persistence
