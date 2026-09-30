@@ -14,6 +14,7 @@ data/raw/
 data/processed/
 data/cache/
 data/runs/
+kaggle-training-data/
 
 # Temporary archive extraction directory
 $stage/

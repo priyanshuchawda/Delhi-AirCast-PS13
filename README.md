@@ -2,15 +2,32 @@
 
 College report + review slides for **PS-13 AI-Powered Air Quality Forecasting**.
 
-## Deliverables
+## Live demo
+
+- **Dashboard:** https://delhi-aircast-ps13.vercel.app
+- **Forecast API health:** https://delhi-aircast-api.onrender.com/health
+- **Training dataset (Kaggle):** https://www.kaggle.com/datasets/priyanshuchawda/delhi-aircast-training-data
+
+The dashboard includes a live WAQI PM₂.₅-index pilot for Pusa and R.K. Puram,
+plus the historical CPCB research dashboard when its local data bundle is
+available. The saved live-model weights are deployed with the API; training
+datasets are not needed to serve forecasts. On free hosting, the API may sleep
+when idle, so the first refresh can take a little longer. Its temporary disk
+does not guarantee continuous observation history. The live index is a
+PM₂.₅-only WAQI/US-EPA-scale proxy, not official CPCB composite AQI.
+
+## Project report and review deliverables
 
 | File | What |
 |------|------|
 | `Delhi_AirCast_PS13_Data_Acquisition_Report.docx` | Full report (edit cover: name, roll, college) |
 | `Delhi_AirCast_PS13_Data_Acquisition_Report.pdf` | Printable PDF |
+| `Delhi_AirCast_PS13_Project_Report.docx` | Detailed data, feature engineering, model comparison, held-out evaluation, deployment, limitations, and reproducibility report |
+| `Delhi_AirCast_PS13_Project_Report.pdf` | Printable copy of the detailed report |
 | `Delhi_AirCast_PS13_Presentation.pptx` | Review deck |
 | `Delhi_AirCast_PS13_Presentation.pdf` | Slides as PDF |
-| `figures/` | Architecture diagrams (Graphviz + Matplotlib) |
+| `figures/` | Architecture diagrams and held-out model comparison chart |
+| `generate_project_report.py` | Rebuild the detailed data/model evaluation report |
 
 ## Regenerate
 
@@ -24,6 +41,28 @@ soffice --headless --convert-to pdf Delhi_AirCast_PS13_Presentation.pptx
 ```
 
 Fill the cover-page blanks before submitting.
+
+The project training bundle is published separately on Kaggle to keep the Git
+repository lightweight. The report documents dataset provenance, row/column
+counts, transformations, evaluation splits, metrics, and deployment caveats.
+
+## Verify the project
+
+Run the Python API/data-processing test suite and frontend static checks:
+
+```bash
+uv run pytest -q
+npm --prefix aircast-web run typecheck
+npm --prefix aircast-web run lint
+npm --prefix aircast-web run build
+```
+
+With the FastAPI and Next.js services running locally, verify the dashboard in
+Chromium at phone, tablet, and desktop widths:
+
+```bash
+uv run --group dev python aircast-web/scripts/smoke_test.py http://127.0.0.1:3000
+```
 
 ## Acquire public datasets
 
