@@ -235,6 +235,22 @@ $env:DELHI_AIRCAST_DATA_ROOT = (Resolve-Path .local-serving).Path
 uv run uvicorn delhi_aircast.api:app --reload --host 127.0.0.1 --port 8000
 ```
 
+To export a portable Windows folder and zip for a friend (model weights plus
+only the inference-time station snapshot, not the training datasets):
+
+```powershell
+uv run python scripts/build_serving_bundle.py --portable --output .portable-aircast
+```
+
+Download the ready-to-run [`Delhi-AirCast-portable-v1.0.0.zip` from GitHub Releases](https://github.com/priyanshuchawda/Delhi-AirCast-PS13/releases/latest).
+The export is about 15 MB compressed / 44 MB expanded and contains only the
+inference snapshot, station metadata, and model artifacts. On the other laptop,
+extract it, install Python 3.13+, uv, and Node.js 22+, then run
+`./run-portable.ps1` in PowerShell and open `http://localhost:3000`. First
+launch installs runtime dependencies; no original datasets or retraining are
+required. The snapshot is historical at export time and does not refresh
+itself.
+
 In a second terminal, start the Next.js app:
 
 ```powershell

@@ -18,6 +18,18 @@ dependencies = [
     "xgboost>=3.4.1",
 ]
 
+[project.optional-dependencies]
+api = [
+    "fastapi>=0.115.0",
+    "joblib>=1.4.2",
+    "numpy>=2.2.0",
+    "pandas>=2.2.3",
+    "pyarrow>=18.0.0",
+    "scikit-learn>=1.6.0",
+    "uvicorn[standard]>=0.34.0",
+    "xgboost>=3.4.1",
+]
+
 [dependency-groups]
 dev = [
     "httpx2>=2.13.0",

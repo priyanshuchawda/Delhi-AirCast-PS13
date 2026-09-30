@@ -26,3 +26,6 @@ dashboard*.png
 
 # Generated compact offline deployment bundle
 .local-serving/
+.portable-*/
+.portable-*.zip
+Delhi-AirCast-portable-*.zip

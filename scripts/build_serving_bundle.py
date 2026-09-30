@@ -11,6 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import subprocess
+import zipfile
 from pathlib import Path
 
 import joblib
@@ -19,6 +21,7 @@ import pyarrow.parquet as pq
 
 
 ROOT = Path(__file__).resolve().parents[1]
+PORTABLE_VERSION = "1.0.0"
 HORIZONS = (1, 3, 6, 12, 24)
 POLLUTANTS = ("pm10", "no2", "co", "o3")
 
@@ -102,12 +105,86 @@ def build_bundle(data_root: Path, output: Path) -> dict[str, object]:
     return manifest
 
 
+def export_portable(data_root: Path, output: Path) -> dict[str, object]:
+    """Export a runnable source + inference bundle without training datasets."""
+    data_root = data_root.resolve()
+    output = output.resolve()
+    manifest = build_bundle(data_root, output / "serving")
+    package_root = Path(__file__).resolve().parents[1]
+
+    for name in ("src", "Dockerfile", ".dockerignore", "docker-compose.yml", "README.md"):
+        source = package_root / name
+        destination = output / name
+        if source.is_dir():
+            shutil.copytree(source, destination, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"), dirs_exist_ok=True)
+        elif source.is_file():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+    (output / "pyproject.toml").write_text(
+        '[project]\n'
+        'name = "delhi-aircast-portable"\n'
+        f'version = "{PORTABLE_VERSION}"\n'
+        'requires-python = ">=3.13"\n'
+        'dependencies = [\n'
+        '  "fastapi>=0.115.0",\n'
+        '  "joblib>=1.4.2",\n'
+        '  "numpy>=2.2.0",\n'
+        '  "pandas>=2.2.3",\n'
+        '  "pyarrow>=18.0.0",\n'
+        '  "scikit-learn>=1.6.0",\n'
+        '  "uvicorn[standard]>=0.34.0",\n'
+        '  "xgboost>=3.4.1",\n'
+        ']\n\n'
+        '[tool.uv]\n'
+        'package = false\n',
+        encoding="utf-8",
+    )
+    (output / "uv.lock").unlink(missing_ok=True)
+    subprocess.run(["uv", "lock", "--directory", str(output)], check=True)
+    web_source = package_root / "aircast-web"
+    shutil.copytree(
+        web_source,
+        output / "aircast-web",
+        ignore=shutil.ignore_patterns("node_modules", ".next", "*.tsbuildinfo", ".env*"),
+        dirs_exist_ok=True,
+    )
+
+    launcher_source = package_root / "scripts" / "run-portable.ps1"
+    shutil.copy2(launcher_source, output / "run-portable.ps1")
+    (output / "PORTABLE_README.md").write_text(
+        "# Delhi AirCast portable offline app\n\n"
+        "This export includes trained models and only the small inference-time snapshot. "
+        "It does not include the original training datasets. Model predictions use the "
+        "latest observation available when this bundle was exported; without new sensor "
+        "data, outputs do not become current over time.\n\n"
+        "## Run on Windows\n\n"
+        "For a native Windows setup, install Python 3.13+, uv, and Node.js 22+, then run "
+        "`./run-portable.ps1`. Open http://localhost:3000. Dependencies are installed "
+        "from the included uv/npm lockfiles at first launch.\n\n"
+        "Alternatively, install Docker Desktop and run `docker compose up --build`.\n\n"
+        "Bundle details are in `serving/manifest.json`.\n",
+        encoding="utf-8",
+    )
+    archive = output.parent / f"Delhi-AirCast-portable-v{PORTABLE_VERSION}.zip"
+    if archive.exists():
+        archive.unlink()
+    ignored_parts = {".git", ".venv", "node_modules", ".next", "__pycache__"}
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=7) as zipped:
+        for path in output.rglob("*"):
+            if not path.is_file() or ignored_parts.intersection(path.relative_to(output).parts):
+                continue
+            zipped.write(path, path.relative_to(output))
+    return {**manifest, "version": PORTABLE_VERSION, "portable_directory": str(output), "portable_zip": str(archive)}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, default=ROOT, help="Project root containing ignored data/")
-    parser.add_argument("--output", type=Path, required=True, help="Serving bundle root; not committed")
+    parser.add_argument("--output", type=Path, required=True, help="Output folder; use .local-serving or a portable export folder")
+    parser.add_argument("--portable", action="store_true", help="Export source, runtime, inference assets and a zip for another laptop")
     args = parser.parse_args()
-    print(json.dumps(build_bundle(args.data_root, args.output), indent=2))
+    result = export_portable(args.data_root, args.output) if args.portable else build_bundle(args.data_root, args.output)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
