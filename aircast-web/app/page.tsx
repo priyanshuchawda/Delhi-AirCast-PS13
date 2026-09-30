@@ -33,19 +33,65 @@ type StationForecast = {
 type ForecastResponse = {
   horizon_hours: number;
   as_of_utc: string | null;
+  target_is_future: boolean;
+  forecast_mode: 'forecast' | 'historical_backtest';
   forecasts: StationForecast[];
 };
 
 type HistoryPoint = { timestamp_utc: string; pm25: number };
 type HistoryResponse = { history: HistoryPoint[] };
+type LiveStationForecast = {
+  station_id: string;
+  station_name: string;
+  as_of_utc?: string;
+  age_minutes?: number;
+  current_pm25_index?: number;
+  forecast_pm25_index?: number | null;
+  feature_mode?: string | null;
+  weather_age_minutes?: number | null;
+  quality_status: 'live' | 'stale' | 'unavailable';
+  error?: string;
+};
+type LiveForecastResponse = {
+  issued_at_utc: string;
+  horizon_hours: number;
+  quality_status: string;
+  forecasts: LiveStationForecast[];
+};
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
-    const description = response.status === 503 ? 'Forecast artifacts are not installed on the API service.' : `Forecast service returned ${response.status}.`;
+    const description = response.status === 503 ? 'This forecast service or its model artifact is not configured.' : `Forecast service returned ${response.status}.`;
     throw new Error(description);
   }
   return response.json() as Promise<T>;
+}
+
+function LivePilot({ data, error, loading, refreshing, horizon, onRefresh }: {
+  data?: LiveForecastResponse; error?: Error; loading: boolean; refreshing: boolean;
+  horizon: number; onRefresh: () => void;
+}) {
+  return (
+    <section className="live-pilot" aria-labelledby="live-pilot-title">
+      <div className="live-pilot-heading">
+        <div><span className="section-kicker">LIVE SENSOR PILOT · TWO AREAS</span><h2 id="live-pilot-title">Near-term PM₂.₅ outlook</h2></div>
+        <div className="live-pilot-actions"><span className={`live-status ${data?.quality_status === 'live' ? 'is-live' : ''}`}><i />{data?.quality_status === 'live' ? 'LIVE FEED' : loading ? 'CHECKING FEED' : 'FEED UNAVAILABLE'}</span><button className="live-refresh" onClick={onRefresh} disabled={refreshing} aria-label="Refresh live air quality readings"><RefreshCw size={13} className={refreshing ? 'refresh-spinning' : ''} />{refreshing ? 'Updating' : 'Refresh now'}</button></div>
+      </div>
+      <p className="live-pilot-note">Updates on page load, when you return to this tab, and every 5 minutes. WAQI station PM₂.₅ index with a two-site CPCB-trained pilot. Index points use the WAQI/US-EPA scale—not CPCB composite AQI or concentration (µg/m³).</p>
+      {error && <p className="live-pilot-error" role="status">Live forecast unavailable: {error.message}</p>}
+      <div className="live-pilot-grid">
+        {(data?.forecasts ?? [{ station_id: 'site_107', station_name: 'Pusa', quality_status: 'unavailable' as const }, { station_id: 'site_124', station_name: 'R.K. Puram', quality_status: 'unavailable' as const }]).map((station) => (
+          <article className="live-station-card" key={station.station_id}>
+            <div className="live-station-top"><strong>{station.station_name}</strong><span className={station.quality_status === 'live' ? 'live-fresh' : 'live-stale'}>{station.quality_status === 'live' ? `${Math.round(station.age_minutes ?? 0)}m old` : station.quality_status}</span></div>
+            <div className="live-index-values"><div><small>NOW · PM₂.₅ INDEX</small><strong>{station.current_pm25_index ?? '—'}</strong></div><span aria-hidden="true">→</span><div><small>+{horizon}H · INDEX</small><strong>{station.forecast_pm25_index == null ? '—' : Math.round(station.forecast_pm25_index)}</strong></div></div>
+            <div className="live-station-time">Observed {prettyTime(station.as_of_utc)} · WAQI · {station.feature_mode === 'live_history_weather' ? `sensor history + weather (${Math.round(station.weather_age_minutes ?? 0)}m old)` : station.feature_mode === 'live_history' ? 'sensor-history model' : station.feature_mode === 'history_warming_up' ? 'warm-up fallback · collecting history' : station.feature_mode ?? 'forecast unavailable'}</div>
+          </article>
+        ))}
+      </div>
+      <div className="live-pilot-footer">Experimental research forecast · check the observation age · not a health advisory</div>
+    </section>
+  );
 }
 
 const horizons = [1, 3, 6, 12, 24];
@@ -141,12 +187,18 @@ function MetricCard({ label, value, detail, icon: Icon, accent = false }: {
 }
 
 export default function Home() {
-  const [horizon, setHorizon] = useState(6);
+  const [horizon, setHorizon] = useState(1);
   const [selectedId, setSelectedId] = useState('');
   const { data: forecast, error, isLoading: loading, mutate: reloadForecast } = useSWR<ForecastResponse>(
     `/backend/stations/forecast?horizon=${horizon}`,
     fetchJson,
     { revalidateOnFocus: false, shouldRetryOnError: false },
+  );
+  const liveForecastKey = `/backend/live/stations/forecast?horizon=${horizon}`;
+  const { data: liveForecast, error: liveError, isLoading: liveLoading, isValidating: liveRefreshing, mutate: refreshLiveForecast } = useSWR<LiveForecastResponse>(
+    liveForecastKey,
+    fetchJson,
+    { refreshInterval: 300000, revalidateOnFocus: true, revalidateOnMount: true, shouldRetryOnError: false },
   );
   const stations = forecast?.forecasts ?? [];
   const selected = stations.find((station) => station.station_id === selectedId) ?? stations[0];
@@ -183,7 +235,7 @@ export default function Home() {
         <header className="topbar">
           <div className="breadcrumb">AIR QUALITY <span>/</span> DELHI NCR</div>
           <div className="topbar-right">
-            <span className="archive-pill"><span className="archive-dot" /> HISTORICAL MODE</span>
+            <span className="archive-pill"><span className="archive-dot" /> HISTORICAL MODEL VIEW</span>
             <button className="icon-button" aria-label="About forecast data" onClick={() => document.getElementById('data-note')?.scrollIntoView({ behavior: 'smooth' })}><CircleHelp size={18} /></button>
           </div>
         </header>
@@ -202,6 +254,8 @@ export default function Home() {
             </div>
           </section>
 
+          <LivePilot data={liveForecast} error={liveError} loading={liveLoading} refreshing={liveRefreshing} horizon={horizon} onRefresh={() => void refreshLiveForecast(() => fetchJson(`${liveForecastKey}&refresh=true`), { revalidate: false })} />
+
           {error && <div className="error-banner" role="alert"><CloudFog size={19} /><div><strong>Forecast service unavailable</strong><span>{error.message} Start the FastAPI service and install the local serving bundle.</span></div><button onClick={() => void reloadForecast()}><RefreshCw size={15} /> Retry</button></div>}
 
           <section className="control-row" aria-label="Forecast controls">
@@ -214,7 +268,7 @@ export default function Home() {
             <article className={`aqi-card ${tone.className}`}>
               <div className="aqi-card-heading"><span>FORECAST AIR QUALITY INDEX</span><span className="aqi-mini-icon"><CloudFog size={17} /></span></div>
               <div className="aqi-reading"><strong>{loading ? '···' : selected?.forecast_aqi ?? '—'}</strong><span className="aqi-unit">AQI</span></div>
-              <div className="aqi-category"><span className="aqi-status-dot" />{selected?.forecast_aqi_category ?? tone.label}<span className="aqi-horizon">IN {horizon} HOURS</span></div>
+              <div className="aqi-category"><span className="aqi-status-dot" />{selected?.forecast_aqi_category ?? tone.label}<span className="aqi-horizon">{forecast?.target_is_future ? `IN ${horizon} HOURS` : 'HISTORICAL TARGET'}</span></div>
               <div className="aqi-scale" aria-label="AQI scale"><span /><span /><span /><span /><span /><span /></div>
               <div className="aqi-card-foot"><span>Based on {selected?.forecast_aqi_status === 'cpcb_five_pollutant_subset' ? '5 pollutant forecasts' : 'PM2.5 proxy'}</span><span>0 — 500</span></div>
             </article>
@@ -249,7 +303,7 @@ export default function Home() {
             <article className="panel forecast-panel">
               <div className="panel-heading compact"><div><span className="section-kicker">PLANNING AHEAD</span><h2>Short-term forecast</h2></div><span className="forecast-caption">Selected station · {selected?.station_name?.split(',')[0] ?? '—'}</span></div>
               <div className="forecast-steps">{horizons.map((step) => { const value = step === horizon ? selected?.forecast_aqi : null; const stepTone = aqiTone(value ?? selected?.forecast_aqi ?? null); return <button className={`forecast-step ${step === horizon ? 'chosen' : ''}`} key={step} onClick={() => setHorizon(step)} aria-label={`Show ${step} hour forecast`}><span className="step-time">+{step}<small>h</small></span><span className="step-line"><i style={{ background: stepTone.color }} /></span><strong>{step === horizon ? (selected?.forecast_aqi ?? '—') : '···'}</strong><small className="step-status">{step === horizon ? stepTone.label : 'Select horizon'}</small></button>; })}</div>
-              <div className="forecast-foot"><Clock3 size={14} /> Modelled directly at each horizon from the latest available historical observation.<span>Issued {prettyTime(measuredAt)}</span></div>
+              <div className="forecast-foot"><Clock3 size={14} /> {forecast?.target_is_future ? 'Modelled directly at each horizon from the latest available observation.' : 'Historical model output for the stated target time; not a prediction for the upcoming hours.'}<span>Target {prettyTime(selected?.target_timestamp_utc)}</span></div>
             </article>
             <article className="data-note" id="data-note"><div className="data-note-icon"><ShieldCheck size={19} /></div><div><span className="section-kicker">A NOTE ON THIS FORECAST</span><h2>Useful context, honestly shown.</h2><p>This is an offline research model trained on historical CPCB/OpenCity observations with weather, CAMS and fire-history features. It does not use live sensor feeds. The map shows monitored stations only; neighbourhood-wide interpolation is not validated.</p><a href="https://github.com/priyanshuchawda/Delhi-AirCast-PS13/blob/main/EXPERIMENTS.md" target="_blank" rel="noreferrer">Read the model evaluation <ExternalLink size={13} /></a></div></article>
           </section>

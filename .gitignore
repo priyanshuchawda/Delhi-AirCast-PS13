@@ -23,6 +23,7 @@ dashboard*.png
 
 # Local secrets for optional APIs
 .env
+live-history/
 
 # Generated compact offline deployment bundle
 .local-serving/

@@ -1,0 +1,334 @@
+{
+  "model_family": "HistGradientBoostingRegressor",
+  "stations": {
+    "site_107": "Pusa",
+    "site_124": "R.K. Puram"
+  },
+  "training_period_end_utc": "2025-07-01T00:00:00+00:00",
+  "validation_period_utc": [
+    "2025-07-01T00:00:00+00:00",
+    "2025-10-01T00:00:00+00:00"
+  ],
+  "test_period_start_utc": "2025-10-01T00:00:00+00:00",
+  "feature_columns": [
+    "current_pm25_index",
+    "hour_sin",
+    "hour_cos",
+    "weekday_sin",
+    "weekday_cos",
+    "year_day_sin",
+    "year_day_cos",
+    "station_site_107",
+    "station_site_124",
+    "lag_1h",
+    "lag_3h",
+    "lag_6h",
+    "lag_12h",
+    "lag_24h",
+    "lag_48h",
+    "lag_72h",
+    "mean_3h",
+    "std_3h",
+    "mean_6h",
+    "std_6h",
+    "mean_12h",
+    "std_12h",
+    "mean_24h",
+    "std_24h",
+    "neighbor_current_index",
+    "neighbor_minus_current"
+  ],
+  "target": "PM2.5-only legacy US-EPA AQI index proxy (not CPCB composite AQI)",
+  "input_requirements_live": [
+    "recent WAQI iaqi.pm25 history (up to 72h)",
+    "same-time other pilot-site WAQI index when available",
+    "local timestamp",
+    "mapped station"
+  ],
+  "feature_version": "history_spatial_v1",
+  "incumbent_artifacts": "incumbent_model_{horizon}h.joblib",
+  "weather_candidate_feature_columns": [
+    "current_pm25_index",
+    "hour_sin",
+    "hour_cos",
+    "weekday_sin",
+    "weekday_cos",
+    "year_day_sin",
+    "year_day_cos",
+    "station_site_107",
+    "station_site_124",
+    "lag_1h",
+    "lag_3h",
+    "lag_6h",
+    "lag_12h",
+    "lag_24h",
+    "lag_48h",
+    "lag_72h",
+    "mean_3h",
+    "std_3h",
+    "mean_6h",
+    "std_6h",
+    "mean_12h",
+    "std_12h",
+    "mean_24h",
+    "std_24h",
+    "neighbor_current_index",
+    "neighbor_minus_current",
+    "wx_temperature_2m",
+    "wx_relative_humidity_2m",
+    "wx_precipitation",
+    "wx_wind_u",
+    "wx_wind_v",
+    "wx_surface_pressure",
+    "wx_cloud_cover"
+  ],
+  "weather_policy": "latest Open-Meteo historical weather timestamp at or before issue time; no future weather values",
+  "weather_promotion_gate": "validation MAE must improve and test MAE must improve by at least 1% over history/spatial model",
+  "results": {
+    "1": {
+      "validation": {
+        "rows": 3831,
+        "model": {
+          "mae_index_points": 19.16891319560251,
+          "rmse_index_points": 26.23693455190213
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 19.16891319560251,
+          "rmse_index_points": 26.23693455190213
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 19.558970379620046,
+          "rmse_index_points": 26.823255366315074
+        },
+        "persistence": {
+          "mae_index_points": 20.844166014095535,
+          "rmse_index_points": 29.413646845055766
+        },
+        "weather_candidate": {
+          "mae_index_points": 19.157311134297185,
+          "rmse_index_points": 26.190439972217426
+        }
+      },
+      "test": {
+        "rows": 4252,
+        "model": {
+          "mae_index_points": 19.333850667909555,
+          "rmse_index_points": 29.633443674429657
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 19.333850667909555,
+          "rmse_index_points": 29.633443674429657
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 20.20932713005687,
+          "rmse_index_points": 30.721866803449142
+        },
+        "persistence": {
+          "mae_index_points": 21.571495766698025,
+          "rmse_index_points": 33.9596767140261
+        },
+        "weather_candidate": {
+          "mae_index_points": 19.19357193186455,
+          "rmse_index_points": 29.47417994747065
+        }
+      },
+      "weather_promotion_eligible": false
+    },
+    "3": {
+      "validation": {
+        "rows": 3528,
+        "model": {
+          "mae_index_points": 25.425358440510777,
+          "rmse_index_points": 33.042903263810246
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 25.425358440510777,
+          "rmse_index_points": 33.042903263810246
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 26.75377907154659,
+          "rmse_index_points": 34.70209835330046
+        },
+        "persistence": {
+          "mae_index_points": 32.323696145124714,
+          "rmse_index_points": 42.5647499288782
+        },
+        "weather_candidate": {
+          "mae_index_points": 25.697712762131268,
+          "rmse_index_points": 33.101541055368365
+        }
+      },
+      "test": {
+        "rows": 4189,
+        "model": {
+          "mae_index_points": 34.59002046890834,
+          "rmse_index_points": 48.69017383696165
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 34.59002046890834,
+          "rmse_index_points": 48.69017383696165
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 37.2955723729935,
+          "rmse_index_points": 52.990695325203895
+        },
+        "persistence": {
+          "mae_index_points": 44.03724039150155,
+          "rmse_index_points": 64.76746513847148
+        },
+        "weather_candidate": {
+          "mae_index_points": 33.11708718062408,
+          "rmse_index_points": 47.113230689201764
+        }
+      },
+      "weather_promotion_eligible": false
+    },
+    "6": {
+      "validation": {
+        "rows": 3177,
+        "model": {
+          "mae_index_points": 27.895319998044034,
+          "rmse_index_points": 35.218692406907145
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 27.895319998044034,
+          "rmse_index_points": 35.218692406907145
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 29.298223827078292,
+          "rmse_index_points": 37.22109054950982
+        },
+        "persistence": {
+          "mae_index_points": 37.10198300283286,
+          "rmse_index_points": 48.208826643265525
+        },
+        "weather_candidate": {
+          "mae_index_points": 28.305765209393694,
+          "rmse_index_points": 35.50779917499127
+        }
+      },
+      "test": {
+        "rows": 4098,
+        "model": {
+          "mae_index_points": 42.58251644546363,
+          "rmse_index_points": 58.527593509269934
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 42.58251644546363,
+          "rmse_index_points": 58.527593509269934
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 47.62956060497036,
+          "rmse_index_points": 66.02909888496151
+        },
+        "persistence": {
+          "mae_index_points": 62.173743289409465,
+          "rmse_index_points": 87.72310189539208
+        },
+        "weather_candidate": {
+          "mae_index_points": 39.63549128766933,
+          "rmse_index_points": 54.79046930773745
+        }
+      },
+      "weather_promotion_eligible": false
+    },
+    "12": {
+      "validation": {
+        "rows": 2697,
+        "model": {
+          "mae_index_points": 29.189364793574594,
+          "rmse_index_points": 36.44744978872719
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 29.189364793574594,
+          "rmse_index_points": 36.44744978872719
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 31.215196283397503,
+          "rmse_index_points": 38.94410219483938
+        },
+        "persistence": {
+          "mae_index_points": 41.384501297738225,
+          "rmse_index_points": 52.161588300495644
+        },
+        "weather_candidate": {
+          "mae_index_points": 29.005624451757516,
+          "rmse_index_points": 36.20690265925894
+        }
+      },
+      "test": {
+        "rows": 3944,
+        "model": {
+          "mae_index_points": 48.178711867222354,
+          "rmse_index_points": 66.12765399076426
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 48.178711867222354,
+          "rmse_index_points": 66.12765399076426
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 51.48870312970248,
+          "rmse_index_points": 71.68081357231398
+        },
+        "persistence": {
+          "mae_index_points": 69.8367139959432,
+          "rmse_index_points": 94.55310977409108
+        },
+        "weather_candidate": {
+          "mae_index_points": 44.77421230918595,
+          "rmse_index_points": 62.40078049646427
+        }
+      },
+      "weather_promotion_eligible": true
+    },
+    "24": {
+      "validation": {
+        "rows": 2023,
+        "model": {
+          "mae_index_points": 29.910571254351584,
+          "rmse_index_points": 37.498029753952125
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 29.910571254351584,
+          "rmse_index_points": 37.498029753952125
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 29.643882344099126,
+          "rmse_index_points": 37.25954848752608
+        },
+        "persistence": {
+          "mae_index_points": 32.46861097380128,
+          "rmse_index_points": 42.476360789292265
+        },
+        "weather_candidate": {
+          "mae_index_points": 29.58652595959849,
+          "rmse_index_points": 36.92008255893651
+        }
+      },
+      "test": {
+        "rows": 3683,
+        "model": {
+          "mae_index_points": 50.69077779865525,
+          "rmse_index_points": 69.61136809480274
+        },
+        "history_spatial_challenger": {
+          "mae_index_points": 50.69077779865525,
+          "rmse_index_points": 69.61136809480274
+        },
+        "single_observation_incumbent": {
+          "mae_index_points": 52.406779131900834,
+          "rmse_index_points": 72.66600582442138
+        },
+        "persistence": {
+          "mae_index_points": 52.485745316318216,
+          "rmse_index_points": 74.66374072237944
+        },
+        "weather_candidate": {
+          "mae_index_points": 50.02359778253317,
+          "rmse_index_points": 68.88198750924697
+        }
+      },
+      "weather_promotion_eligible": true
+    }
+  }
+}

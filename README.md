@@ -203,9 +203,54 @@ endpoint automatically prefers them:
     curl http://127.0.0.1:8000/forecast/site_105/path
 
 Responses include issue time, target time, model artifact, horizon, feature
-count, and an explicit historical/offline quality state. This prevents the
-offline research panel from being presented as a live forecast until live
-feature ingestion is implemented.
+count, and an explicit historical/offline quality state. These general
+forecast routes remain historical; the experimental live pilot below is a
+separate endpoint and uses a separately trained index-scale model.
+```
+
+### Experimental WAQI live pilot
+
+The web dashboard also includes a separate two-location live pilot for Pusa
+and R.K. Puram. It calls the WAQI station feed through FastAPI (the token never
+goes to the browser), rejects observations older than two hours, and serves a
+separately trained 1/3/6/12/24-hour models from `models/waqi_live_index/`. It
+starts with a single-observation fallback and uses the history/spatial
+challenger when enough archived hourly readings exist. The pilot uses the
+current WAQI PM2.5 individual index and predicts a PM2.5-only index proxy. It
+is **not** the existing CPCB
+composite AQI or a concentration in µg/m³; keep that scale distinction visible.
+
+The candidate models were trained on hourly CPCB PM2.5 from `site_107` (Pusa)
+and `site_124` (R.K. Puram), transformed to the legacy US-EPA PM2.5 index scale,
+with a chronological Jul–Sep 2025 validation block and Oct–Dec 2025 evaluation
+block. The history/spatial challenger reduced held-out MAE over the
+single-observation model at each horizon. Weather features use only the latest
+Open-Meteo hourly row at or before the issue time. Weather models are promoted
+only if validation MAE improves and test MAE improves by at least 1%; this gate
+passed at 12h and 24h, but not 1h. Therefore the 1h live forecast remains the
+history-based sensor model. These are two-site historical proxy results, not
+independent 2026 WAQI validation.
+
+Set `WAQI_API_KEY` in the API process environment (or in the ignored project
+`.env` for local runs), then start the API and web app as above. The live route
+is `GET /live/stations/forecast?horizon=1`; add `&refresh=true` to bypass the
+five-minute station cache. New upstream observation timestamps are archived to
+`data/raw/waqi_live/observations.jsonl` by default. For regular sampling, run
+`uv run python scripts/collect_waqi_live.py` beside the API; it polls once per
+hour and deduplicates repeated source timestamps. In Docker the archive is
+persisted in the ignored `live-history/` bind mount. Until sufficient lags
+exist, the API explicitly uses the single-observation fallback. `GET /health`
+reports whether the small model files
+and key are configured. The web UI refreshes on page load, tab focus, and every
+five minutes; its Refresh now button requests an upstream refresh. WAQI
+attribution is included in the response and UI. The source uses the US-EPA AQI
+scale by default, which differs from CPCB's scale; this pilot is not a health
+advisory.
+
+Rebuild the compact tracked pilot model files from the local CPCB panel with:
+
+```powershell
+uv run python scripts/train_waqi_live_index.py
 ```
 
 Launch the offline dashboard:
