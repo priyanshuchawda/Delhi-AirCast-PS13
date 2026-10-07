@@ -7,6 +7,7 @@ College report + review slides for **PS-13 AI-Powered Air Quality Forecasting**.
 - **Dashboard:** https://delhi-aircast-ps13.vercel.app
 - **Forecast API health:** https://delhi-aircast-api.onrender.com/health
 - **Training dataset (Kaggle):** https://www.kaggle.com/datasets/priyanshuchawda/delhi-aircast-training-data
+- **Historical model weights and model card (Hugging Face):** https://huggingface.co/priyanshuchawda/delhi-aircast-historical-pm25
 
 The dashboard includes a live WAQI PM₂.₅-index pilot for Pusa and R.K. Puram,
 plus the historical CPCB research dashboard when its local data bundle is
@@ -45,6 +46,17 @@ Fill the cover-page blanks before submitting.
 The project training bundle is published separately on Kaggle to keep the Git
 repository lightweight. The report documents dataset provenance, row/column
 counts, transformations, evaluation splits, metrics, and deployment caveats.
+The five historical XGBoost horizon weights (about 23.7 MB total), a compact
+evaluation summary, and model card are published on Hugging Face; the original
+training datasets are not included in that model repository.
+
+To reproduce the curated Hugging Face upload package locally:
+
+```powershell
+uv run python scripts/export_hf_historical_model.py
+hf auth login
+hf upload priyanshuchawda/delhi-aircast-historical-pm25 .hf-historical-model . --type model
+```
 
 ## Verify the project
 

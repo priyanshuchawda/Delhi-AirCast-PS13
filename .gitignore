@@ -30,4 +30,5 @@ live-history/
 .local-serving/
 .portable-*/
 .portable-*.zip
+.hf-historical-model/
 Delhi-AirCast-portable-*.zip
