@@ -1,0 +1,617 @@
+DELHI AIRCAST
+PS-13 AI-POWERED AIR QUALITY FORECASTING
+PROJECT SHOWCASE AND COMPLETION REPORT
+
+A complete data-to-dashboard air-quality forecasting project
+Prepared: 9 October 2026
+Project repository: https://github.com/priyanshuchawda/Delhi-AirCast-PS13
+
+======================================================================
+PROJECT AT A GLANCE
+======================================================================
+
+Delhi AirCast is an end-to-end air-quality forecasting system built for
+Delhi. It brings together public environmental data, carefully constructed
+time-series features, comparative machine-learning experiments, AQI
+calculations, model-serving APIs, interactive dashboards, and portable
+container deployment.
+
+The project delivers two complementary forecasting experiences:
+
+1. HISTORICAL CPCB STATION FORECASTING
+   A research pipeline for 39 Delhi monitoring stations, producing direct
+   PM2.5 concentration forecasts at 1, 3, 6, 12, and 24 hours. The feature
+   workflow combines station history, nearby monitors, weather, atmospheric
+   model fields, and regional fire activity. Comparative experiments selected
+   gradient-boosted trees as the practical model family for the demonstrated
+   historical task.
+
+2. LIVE TWO-STATION PILOT
+   A live-data experience for Pusa and R.K. Puram using the WAQI station feed.
+   It fetches current observations, uses an independently trained history-
+   aware model, and reports forecasts on the WAQI/US-EPA individual PM2.5
+   index scale.
+
+Together these tracks demonstrate a full applied AI workflow: source data,
+quality checks, time-aware feature engineering, baseline comparisons, advanced
+model challengers, API inference, user interfaces, and deployment packaging.
+
+======================================================================
+PROJECT OBJECTIVE
+======================================================================
+
+The PS-13 problem is to make short-term air-quality information more useful
+and local for people in Delhi. A city-wide daily average cannot describe every
+monitoring location or the way pollution changes over the next several hours.
+Delhi AirCast addresses this need with station-aware near-term forecasts,
+historical context, pollutant summaries, and clear visual presentation.
+
+The project combines applied machine learning with a practical engineering
+system. It includes both offline research forecasts built from historical
+CPCB/OpenCity station data and a separate live pilot connected to WAQI. Its
+interfaces make the timing, data source, station, forecast horizon, and AQI
+interpretation visible to users.
+
+======================================================================
+WHAT THE PROJECT DELIVERS
+======================================================================
+
+DATA AND RESEARCH
+- Acquisition workflows for public CPCB/OpenCity, weather, CAMS, OpenAQ,
+  NASA FIRMS, AirDelhi, and comparison datasets.
+- Source-specific manifests, checksums, raw-data organization, and normalized
+  Parquet data products.
+- A quality-audited hourly panel for 39 CPCB/OpenCity stations across 2024
+  and 2025 in the documented research run.
+- A point-in-time feature table for multiple stations and forecast horizons.
+- A unified feature workflow that adds weather, CAMS, and prior-day fire
+  information under explicit time-availability rules.
+
+MACHINE LEARNING
+- Persistence and single-station baselines.
+- Multi-station XGBoost models for direct 1/3/6/12/24-hour PM2.5 forecasts.
+- HistGradientBoosting comparisons and a validation-tuned model-blend
+  experiment.
+- LSTM and temporal convolutional network (TCN) sequence challengers.
+- A spatial graph neural network (GNN) challenger over the monitor network.
+- A five-pollutant CPCB AQI subset experiment at six hours.
+- A separate two-site WAQI live PM2.5-index pilot with history and optional
+  weather inputs.
+
+AQI AND USER EXPERIENCE
+- CPCB pollutant breakpoint and sub-index calculation for PM2.5, PM10, NO2,
+  SO2, O3, CO, and NH3.
+- Explicit handling of composite AQI availability and PM2.5-derived proxy
+  results.
+- A FastAPI model service, a local Streamlit research dashboard, and a
+  responsive Next.js web dashboard.
+- Clickable station map, forecast horizon controls, station history chart,
+  pollutant details, and a dedicated live pilot section.
+
+DEPLOYMENT AND REPRODUCIBILITY
+- Docker and Docker Compose setup for the web and API services.
+- Compact serving-bundle builder for offline inference assets.
+- Portable launch workflow described in the project documentation.
+- Unit tests and GitHub Actions CI configuration.
+- Experiment ledger and reproducible commands for acquisition, building,
+  training, evaluation, and serving.
+
+======================================================================
+TECHNOLOGY STACK
+======================================================================
+
+PYTHON AND DATA SCIENCE
+- Python 3.13+ for ingestion, data engineering, modelling, and APIs.
+- pandas and NumPy for time-series and numerical operations.
+- PyArrow and Parquet for efficient columnar data storage.
+- scikit-learn for HistGradientBoosting, metrics, and model utilities.
+- XGBoost for the main historical gradient-boosted tree models.
+- PyTorch for LSTM, TCN, and GNN model experiments.
+- joblib for compact Python model bundles.
+- pytest for unit-level quality checks.
+
+SERVICES AND INTERFACES
+- FastAPI and Pydantic for validated JSON endpoints.
+- Uvicorn for the ASGI application server.
+- Streamlit for the interactive offline research dashboard.
+- Next.js, React, and TypeScript for the web product.
+- SWR for web data fetching and refresh behavior.
+- Recharts for historical time-series presentation.
+- Lucide icons and custom responsive CSS/SVG map elements.
+
+BUILD AND DELIVERY
+- uv and a lockfile for Python environment management.
+- npm and package-lock for the frontend.
+- Docker and Docker Compose for repeatable service deployment.
+- GitHub Actions for automated Python test execution on repository changes.
+
+======================================================================
+END-TO-END ARCHITECTURE
+======================================================================
+
+The system is organized as a clear progression from source data to the
+forecast experience:
+
+PUBLIC DATA SOURCES
+    |
+    v
+SOURCE-SPECIFIC ACQUISITION
+    |  resumable downloads, API pagination, retries, manifests, hashes
+    v
+NORMALIZATION AND PROVENANCE
+    |  canonical field names, UTC/IST timestamps, units, missing values
+    v
+QUALITY AUDITS
+    |  coverage, duplicates, station registry, coordinates, network health
+    v
+POINT-IN-TIME FEATURE DATASETS
+    |  historical station data + weather/CAMS/FIRMS as available at issue time
+    v
+MODEL TRAINING AND EVALUATION
+    |  chronological splits, persistence comparisons, station-aware metrics
+    v
+MODEL ARTIFACTS AND SERVING BUNDLE
+    |  per-horizon weights, feature schemas, compact inference snapshots
+    v
+FASTAPI AND DASHBOARDS
+       station forecasts, AQI results, history, maps, live pilot, source labels
+
+The live pilot follows its own serving path. The API retrieves the two WAQI
+feeds server-side, checks freshness, builds features from collected readings,
+uses the live-index model, and returns attributed results to the web interface.
+This keeps its index-scale prediction separate from the CPCB concentration
+forecast pipeline.
+
+======================================================================
+DATA SOURCES AND THEIR CONTRIBUTION
+======================================================================
+
+CPCB / OPENCITY DELHI HOURLY ARCHIVE
+The principal supervised source for historical station modelling. Its station
+measurements provide the pollutant labels and station-level observations. The
+project documents 78 source resources and 39 station files in its 2024–2025
+normalized panel.
+
+CPCB DATA.GOV.IN LIVE SNAPSHOT
+Provides a route for official current station readings and metadata. The
+project includes a resumable API connector and uses conservative station
+matching to support quality reports and coordinate metadata.
+
+OPEN-METEO HISTORICAL WEATHER
+Provides central-Delhi hourly temperature, relative humidity, precipitation,
+wind, pressure, and cloud cover. These fields add meteorological context to the
+historical feature workflow.
+
+OPEN-METEO AIR QUALITY / CAMS
+Provides regional atmospheric-model pollutant fields used as auxiliary
+predictors. The project accounts for the product's publication delay before
+joining these fields to forecast issue times.
+
+NASA FIRMS ACTIVE-FIRE OBSERVATIONS
+Provides MODIS and VIIRS fire detections across Delhi and surrounding regions.
+Normalized daily counts and fire-radiative-power summaries contribute regional
+event context to the historical modelling experiments.
+
+OPENAQ
+Provides an API workflow for Delhi/NCR sensor catalogs, latest values, and
+hourly data. The project preserves location, sensor, parameter, unit, and
+coverage information to support comparison and validation workflows.
+
+IIT DELHI AIRDELHI
+Provides mobile-sensor and spatial-grid data for a distinct spatial research
+layer. It is normalized independently from reference monitor observations.
+
+KAGGLE / HUGGING FACE DATASETS
+Provide comparison and provenance-review sources. Dataset roles are documented
+so that community derivatives remain identifiable and auditable.
+
+WAQI LIVE STATION FEED
+Provides the current PM2.5 individual index for Pusa and R.K. Puram in the live
+pilot. Its index semantics are kept separate from concentration and CPCB AQI.
+
+======================================================================
+DATA ACQUISITION AND ENGINEERING
+======================================================================
+
+ACQUISITION
+The general downloader discovers and downloads OpenCity resources and obtains
+historical weather, CAMS data, and CPCB reference documents. Dedicated
+connectors handle the sources that need their own API protocols:
+
+- OpenAQ acquisition retrieves catalogs and hourly batches with paging,
+  request pacing, retries, external key handling, and resumable manifests.
+- NASA FIRMS acquisition divides the requested date range into short windows,
+  supports retry/resume, and stores checksummed raw CSV responses.
+- CPCB live acquisition supports paginated snapshot collection.
+- Kaggle acquisition uses the external Kaggle client and keeps credentials
+  outside the project repository.
+
+NORMALIZATION
+CPCB/OpenCity CSVs are mapped into consistent pollutant and meteorological
+field names. Timestamps are parsed to UTC while local Indian Standard Time is
+also available. Numeric columns are normalized, provider sentinel values are
+converted to missing values, and measurements are resampled to hourly
+observations with within-hour sample counts. The project retains a pollutant
+reading only when the configured sample minimum is met.
+
+OpenAQ hourly JSON is normalized into a long-form Parquet table with sensor,
+location, parameter, unit, coverage, and source-time fields. Duplicate sensor
+and timestamp records are collapsed deterministically. FIRMS detections are
+parsed into UTC event times, coordinates, confidence, satellite, and fire
+radiative power. Daily aggregates summarize Delhi and surrounding regions.
+
+DATA QUALITY AND COORDINATES
+The station-panel audit generates machine-readable coverage, station registry,
+network coverage, and quality summaries. Coordinate matches are conservative:
+unique station matches are accepted, while an unmatched station is left
+unassigned rather than given an estimated location.
+
+The documented panel run contains 39 station files and 684,216 hourly rows
+from 1 January 2024 to 31 December 2025. Mean network hourly PM2.5 availability
+is reported as 93.20%, and 38 of the 39 station names match coordinates from
+the live CPCB snapshot.
+
+======================================================================
+FEATURE ENGINEERING AND TIME-AWARE DESIGN
+======================================================================
+
+CORE STATION AND TIME FEATURES
+The multi-station feature builder creates a shared station-hour table. For each
+station it includes current PM2.5, PM2.5 lags at 1, 3, 6, 12, 24, 48, and 72
+hours, and rolling mean/standard-deviation summaries over 3, 6, 12, 24, and 72
+hours. Other pollutant and local meteorology fields include current values and
+selected lags. Time is represented with cyclic sine/cosine encodings for hour,
+weekday, and month, along with a weekend indicator.
+
+SPATIAL FEATURES
+For each monitoring station, the data builder uses the five nearest stations
+from the coordinate registry. At each timestamp it summarizes available
+neighbor PM2.5 using mean, maximum, standard deviation, and availability count.
+The GNN challenger separately represents the monitor network as nodes and uses
+a six-nearest-station graph.
+
+AUXILIARY FEATURES
+- Weather is joined using the latest source timestamp at or before the issue
+  time. Wind speed and direction are converted to vector components.
+- CAMS regional pollutant fields are joined with an explicit six-hour
+  publication lag, plus additional lag/rolling values.
+- FIRMS data is used only from completed prior days, including regional counts
+  and multi-day summaries.
+
+DIRECT TARGETS
+The dataset builder creates direct labels at +1, +3, +6, +12, and +24 hours.
+Models predict each selected horizon directly, which keeps the prediction
+contract straightforward and avoids compounding a chain of earlier predictions.
+
+POINT-IN-TIME DESIGN
+Features describe observations available at or before issue time t. Targets
+are future values at t+h. Weather joins run backward in time, CAMS carries a
+publication-delay rule, and fire summaries use complete earlier days. The
+training and evaluation partitions are chronological, and neural preprocessing
+is fitted from training data. These design choices make the experiments
+appropriate for forecasting evaluation.
+
+======================================================================
+MODEL DEVELOPMENT AND NEW MODEL EXPERIMENTS
+======================================================================
+
+1. PERSISTENCE BASELINE
+Carries the current reading forward. This creates a simple and meaningful
+reference for every horizon and helps quantify the value added by learned
+models.
+
+2. SINGLE-STATION HISTGRADIENTBOOSTING BASELINE
+An early one-hour forecast for site_105 demonstrated the first complete
+feature-build/train/evaluate/serve path. It used numeric features with adequate
+coverage and a chronological train/validation/test scheme.
+
+3. MULTI-STATION XGBOOST
+The project then pooled records across stations and trained direct-horizon
+boosted-tree models. This allowed the model to learn shared patterns while
+including station identity and local context. Evaluation stored station-level
+metrics as well as aggregate scores.
+
+4. UNIFIED-FEATURE FINAL XGBOOST
+The final historical model family combines station/time/neighbour features
+with point-in-time weather, CAMS, and FIRMS features. The code trains a
+separate XGBRegressor for each horizon. Documented parameters include a
+squared-error objective, 350 estimators, learning rate 0.05, maximum depth 8,
+minimum child weight 8, row subsampling 0.9, column subsampling 0.85, L2
+regularization 2, histogram tree building, and random seed 42. Each saved
+bundle stores its feature schema and issue-time policy alongside the model.
+
+5. XGBOOST FEATURE-FAMILY ABLATIONS
+A diagnostic compared CPCB sensor/time/neighbour features against successive
+addition of weather, CAMS, and FIRMS. It also compared XGBoost with
+HistGradientBoosting and explored a simple blend selected on validation data.
+This makes the contribution of feature families and model complexity visible.
+
+6. EXPANDING-WINDOW BACKTESTS
+Five quarterly test windows begin at October 2024, January 2025, April 2025,
+July 2025, and October 2025. Each fold expands the training period and scores
+the next three months, providing an evaluation across multiple seasonal
+periods and station slices.
+
+7. LSTM SEQUENCE MODEL
+The LSTM challenger consumes contiguous 48-hour histories in the documented
+comparison. Inputs include current PM2.5, neighbor summaries, weather, and
+cyclic time. Missing-value indicators are included. A two-layer LSTM with 64
+hidden units, dropout, station embeddings, and a direct regression head learns
+from sequence order. Training-only normalization and a log1p target transform
+support stable optimization.
+
+8. TEMPORAL CONVOLUTIONAL NETWORK
+The TCN uses residual temporal convolution blocks with multiple dilation
+levels to model patterns over different portions of the history. It shares the
+sequence input/cohort design with the LSTM and produces a direct horizon
+prediction with station embeddings.
+
+9. SPATIAL GRAPH NEURAL NETWORK
+The GNN represents each coordinate-matched CPCB monitor as a graph node.
+Six-nearest-station edges pass information between nearby monitor states. A
+learned node representation and message-passing layers combine local recent
+conditions with spatial context. Validation-based early stopping chooses the
+checkpoint; the test comparison uses common station-time rows against XGBoost
+and persistence.
+
+10. FIVE-POLLUTANT AQI FORECAST EXPERIMENT
+Separate direct-horizon models estimate PM2.5, PM10, NO2, CO, and O3. The
+project's CPCB sub-index calculation combines the forecast concentrations into
+a five-pollutant AQI subset. The experiment also compares against a
+PM2.5-only proxy and persistence on a matched cohort.
+
+11. LIVE WAQI HISTORY/SPATIAL MODEL
+A separate HistGradientBoosting model family predicts the WAQI individual
+PM2.5 index proxy for Pusa and R.K. Puram. Features include current index,
+cyclic local time, station identity, hourly index lags through 72 hours,
+rolling statistics, and the contemporaneous reading from the other pilot site
+when available.
+
+12. LIVE WAQI WEATHER CANDIDATE
+The live pilot also evaluates weather inputs. The API uses weather only from
+at or before the WAQI issue timestamp and requires it to be fresh. A recorded
+promotion gate compares validation and test performance; the eligible weather
+models are used at the horizons selected by that gate.
+
+======================================================================
+EVALUATION RESULTS FROM THE PROJECT LEDGER
+======================================================================
+
+These values are the documented outputs of the project experiment ledger and
+tracked WAQI evaluation summary. They show how model families were compared
+on chronological data.
+
+ONE-HOUR CPCB FORECAST: PERSISTENCE VS GLOBAL XGBOOST
+Metric                    Persistence       XGBoost
+MAE (micrograms/m3)       22.692             18.527
+RMSE                      37.143             29.853
+R-squared                  0.891              0.929
+
+The recorded one-hour held-out result shows an 18.3% aggregate MAE improvement
+over persistence. The rolling quarterly one-hour evaluation reports mean fold
+MAE of 16.383 for persistence and 14.466 for XGBoost across five expanding
+windows, with XGBoost improving 176 of 195 station-fold comparisons.
+
+SIX-HOUR SEQUENCE MODEL COMPARISON (6,708 COMMON TEST ROWS)
+Model                  MAE       RMSE
+Persistence            66.812    94.043
+Global XGBoost         42.814    63.032
+LSTM                   45.195    69.235
+TCN                    45.197    68.380
+
+This comparison shows the practical value of a well-engineered tree model on
+the shared cohort, while establishing a reproducible basis for future sequence
+experiments.
+
+SPATIAL GNN COMPARISON
+Horizon  Rows    Persistence MAE  GNN MAE  XGBoost MAE
+1h       80,224  22.879           21.802   18.887
+3h       79,664  48.141           37.979   35.339
+6h       79,254  70.650           49.393   44.246
+12h      78,780  85.446           58.956   50.901
+24h      78,257  58.672           61.145   56.117
+
+The GNN provides a meaningful graph-learning benchmark, improves over
+persistence through 12 hours in the reported comparison, and creates a clear
+starting point for further spatial model research.
+
+SIX-HOUR FEATURE CONTRIBUTION STUDY
+Feature group/model                          Validation MAE  Test MAE
+CPCB sensor/time/neighbours, XGBoost         11.834          47.930
++ weather, XGBoost                            12.117          45.618
++ weather + CAMS, XGBoost                     12.291          44.547
++ FIRMS (all sources), XGBoost                12.906          44.283
+All sources, HistGradientBoosting             —               44.587
+Validation-selected XGBoost/HGB blend         —               44.283
+
+In the documented sampled six-hour study, auxiliary weather, CAMS, and FIRMS
+features reduce test MAE by 3.647 µg/m³ relative to the CPCB-only feature set.
+The experiment is useful because it measures incremental source contribution
+rather than assuming that every added dataset helps in every situation.
+
+SIX-HOUR FIVE-POLLUTANT AQI SUBSET
+- Forecast subset: MAE 47.10; category accuracy 62.10%.
+- PM2.5-only proxy on the same comparison: MAE 51.68; category accuracy
+  57.77%.
+- AQI persistence: MAE 75.97; category accuracy 47.18%.
+
+This experiment demonstrates the benefit of using multiple pollutant forecasts
+in the CPCB sub-index calculation compared with a single-pollutant proxy.
+
+WAQI LIVE PILOT TEST MAE (INDEX POINTS)
+Horizon  History/spatial  Single-observation  Weather candidate
+1h       19.334           20.209              19.194
+3h       34.590           37.296              33.117
+6h       42.583           47.630              39.635
+12h      48.179           51.489              44.774
+24h      50.691           52.407              50.024
+
+The pilot's weather-candidate promotion rule requires validation improvement
+and at least 1% test MAE improvement. The evaluation summary identifies the
+12-hour and 24-hour weather models as eligible under that rule.
+
+======================================================================
+AQI ENGINE AND INTERPRETATION
+======================================================================
+
+The AQI module defines CPCB concentration breakpoints for PM2.5, PM10, NO2,
+SO2, O3, CO, and NH3. It calculates pollutant sub-indices and uses the largest
+available sub-index for a composite result when sufficient inputs are
+provided. It returns a clear insufficiency status when a composite cannot be
+calculated. A PM2.5-only result is explicitly named a derived proxy.
+
+The project therefore distinguishes three kinds of values:
+- PM2.5 concentration in micrograms per cubic metre.
+- CPCB AQI calculated from available pollutant concentrations.
+- WAQI individual PM2.5 index on the WAQI/US-EPA scale.
+
+These distinctions are reflected in API response fields and dashboard labels,
+so users can understand the scale of each result.
+
+======================================================================
+API AND APPLICATION EXPERIENCE
+======================================================================
+
+FASTAPI ENDPOINTS
+- GET /health — reports API and model/data readiness.
+- POST /aqi — calculates pollutant sub-indices and AQI/proxy status.
+- GET /stations — returns station registry and available latest offline data.
+- GET /stations/forecast — returns forecasts for available stations at a chosen
+  horizon.
+- GET /forecast/{station_id} — returns a station-specific forecast.
+- GET /forecast/{station_id}/path — returns forecasts across supported horizons.
+- GET /stations/{station_id}/history — returns recent station PM2.5 history.
+- GET /live/stations/forecast — returns current Pusa and R.K. Puram WAQI index
+  forecasts with freshness, source attribution, and feature mode.
+
+The service loads horizon-specific model artifacts and their feature schemas.
+Offline responses identify their historical source status. The live endpoint
+validates WAQI timestamps and values, uses server-side credentials, maintains a
+short cache, and records new observations for history features.
+
+WEB DASHBOARD
+The Next.js application presents a Delhi overview, station selector, horizon
+controls, monitor map, forecast AQI and PM2.5 cards, recent history chart, and
+pollutant summaries. Its live pilot panel separately shows WAQI readings,
+forecast index, observation age, model mode, and a refresh control. SWR handles
+fetching and periodic refresh. The API URL is configured through the frontend
+rewrite, so browser components use same-origin backend paths.
+
+STREAMLIT RESEARCH DASHBOARD
+The local dashboard loads research Parquet and model bundles to explore
+stations, forecasts, metrics, and available model comparisons. It supports
+side-by-side views of selected tree and neural/graph challengers when their
+artifacts are present.
+
+======================================================================
+DEPLOYMENT AND REPRODUCIBILITY
+======================================================================
+
+The Python service is packaged with uv and Docker. The web frontend uses a
+multi-stage Node 22 Docker build and Next.js standalone output. Docker Compose
+runs both services, health-checks the API, mounts the offline serving bundle
+read-only, and keeps live observation history in its own storage mount.
+
+The serving-bundle builder packages inference-time data and weights without
+copying the full research panel into the runtime image. The project also
+includes a portable export workflow for launching the dashboard and API on
+another machine.
+
+Typical research workflow:
+1. Install the locked Python dependencies with `uv sync --locked`.
+2. Acquire and normalize data with scripts/download_* and scripts/normalize_*.
+3. Audit the station panel with `scripts/analyze_cpcb_panel.py`.
+4. Build multi-station and unified features.
+5. Train baselines and candidate models.
+6. Run chronological, rolling, and feature-family evaluations.
+7. Build the compact serving bundle.
+8. Start FastAPI and the selected dashboard.
+
+The repository includes unit tests for AQI, API, data construction, source
+normalization, and model-evaluation logic. GitHub Actions is configured to
+install the locked environment and run the Python test suite.
+
+======================================================================
+PROJECT ORGANIZATION
+======================================================================
+
+DOCUMENTATION
+README.md, problem.md, DATA_SOURCES.md, KAGGLE_DATASETS.md, MODEL_STRATEGY.md,
+EXPERIMENTS.md, and the project report/presentation files.
+
+DATA CONNECTORS AND PIPELINE
+scripts/download_datasets.py, download_cpcb_live.py, download_openaq.py,
+download_firms.py, download_kaggle.py, normalize_cpcb.py,
+normalize_cpcb_legacy_aqi.py, normalize_openaq.py, normalize_firms.py,
+normalize_airdelhi.py, analyze_cpcb_panel.py, build_forecast_dataset.py,
+build_multistation_dataset.py, build_unified_dataset.py, and
+build_serving_bundle.py.
+
+MODELS AND EVALUATION
+scripts/train_baseline.py, train_multistation_baseline.py,
+train_final_models.py, compare_model_strategies.py, evaluate_backtests.py,
+train_sequence_model.py, compare_sequence_cohort.py, train_spatial_gnn.py,
+train_multipollutant_aqi.py, and train_waqi_live_index.py.
+
+APPLICATION
+src/delhi_aircast/aqi.py and api.py; dashboard.py; aircast-web Next.js pages,
+styles, API rewrite, and Dockerfile; top-level Dockerfile and docker-compose.yml.
+
+QUALITY AND DELIVERY
+The tests/ directory contains unit tests across the main data/model/API logic.
+The GitHub Actions workflow runs the Python test suite for repository changes.
+
+======================================================================
+PROJECT ACHIEVEMENTS
+======================================================================
+
+- Built a complete environmental data and forecasting workflow around Delhi's
+  station-monitoring network.
+- Established a substantial normalized research panel with explicit station
+  coverage and provenance.
+- Added a multi-source, point-in-time feature engineering pipeline.
+- Compared classical baselines, boosted trees, sequence networks, and a spatial
+  graph model under documented chronological splits.
+- Demonstrated lower aggregate one-hour MAE for XGBoost than persistence in
+  both fixed-split and rolling-origin results.
+- Quantified the value of weather/CAMS/FIRMS feature families in a six-hour
+  diagnostic.
+- Implemented a reusable CPCB AQI calculation engine with explicit pollutant
+  and proxy semantics.
+- Created a five-pollutant AQI forecasting experiment and a separately
+  trained, two-site live index pilot.
+- Delivered both research and user-facing dashboard experiences, backed by a
+  documented API contract.
+- Prepared Docker, portable bundle, CI, and test infrastructure to support
+  repeatable execution and deployment.
+- Recorded model configurations, evaluation results, and commands so that the
+  work can be reviewed and extended by other developers.
+
+======================================================================
+CONCLUSION
+======================================================================
+
+Delhi AirCast demonstrates how a real-world forecasting idea can be developed
+into a complete, inspectable software system. The project connects public
+data acquisition, time-series data engineering, station-network context,
+multiple AI model families, AQI calculations, service APIs, interactive
+visualizations, and portable deployment into one coherent workflow.
+
+Its model program is evidence-led: it establishes baselines, measures
+boosted-tree performance, tests newer sequence and graph approaches, studies
+additional data sources, and records how model choices are made. Its software
+architecture separates the historical CPCB research experience from the live
+WAQI pilot and carries source and scale information into the user interface.
+
+The result is a strong PS-13 project foundation: a working technical
+architecture, a broad set of implemented data and model components, measured
+forecasting experiments, and a clear path for continued research and product
+improvement.
+
+PROJECT FILES
+Full technical report: Delhi_AirCast_PS13_Detailed_Project_Report.pdf/.txt
+Showcase report: Delhi_AirCast_PS13_Project_Showcase.txt
+Experiment ledger: EXPERIMENTS.md
+Source repository: https://github.com/priyanshuchawda/Delhi-AirCast-PS13
+
+END OF SHOWCASE REPORT
